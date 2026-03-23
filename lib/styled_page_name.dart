@@ -9,10 +9,14 @@ class StyledPageName extends StatelessWidget{
   Widget build(context) {
     return  Text(
                 pageTitle,
-                style:TextStyle(
+                style:const TextStyle(
                   fontWeight: FontWeight.bold, 
                   fontSize: 40,
+                  color: Colors.black87,
+                 
                 ),
     );
   }
+
+
 }
