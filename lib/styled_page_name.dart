@@ -13,7 +13,8 @@ class StyledPageName extends StatelessWidget{
                   fontWeight: FontWeight.bold, 
                   fontSize: 40,
                   color: Colors.black87,
-                 
+                 TextStyle(
+                  textAlign: TextAlign.left,
                 ),
     );
   }
