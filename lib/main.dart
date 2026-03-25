@@ -5,8 +5,8 @@ void main() {
   runApp(
      MaterialApp(
       home: Scaffold(
-        body: GradientContainer() ,
-        appBar: TabBar(tabs: tabs),),
+        body: GradientContainer(),
+        ),
       ),
     );// func. used to run app.
 }
