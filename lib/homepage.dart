@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:deadline_app/styled_page_name.dart';
-import 'package:deadline_app/styled_page_name.dart';
+
 class Homepage extends StatefulWidget{
 const Homepage({super.key});
 
@@ -9,18 +9,25 @@ const Homepage({super.key});
 }
   class  _HomepageState extends State<Homepage>{
     int _selectedIndex = 0;
+ 
+  //List of page titles
+  final List<String> _pageTitles = [
+    'Dashboard','Task','Timer','Blocker','Profile'
+  ];
 
+  //bottom Navigation bar
   void navigateBottomBar(int index){
     setState(() {
       _selectedIndex = index;
     });
   }
+
     @override
   Widget build(context){
       return Scaffold(
+        appBar: StyledPageName(pageTitle: _pageTitles[_selectedIndex]),
         body: Center(
-          child: StyledPageName('Dashboard'),
-          
+         // child: StyledPageName('Dashboard'),
         ),
         bottomNavigationBar: BottomNavigationBar(
           currentIndex: _selectedIndex, // when user selects a tab to navigate to
