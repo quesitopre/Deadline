@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:deadline_app/styled_page_name.dart';
+import 'package:deadline_app/timer.dart';
 
 class Homepage extends StatefulWidget{
 const Homepage({super.key});
@@ -15,6 +16,14 @@ const Homepage({super.key});
     'Dashboard','Task','Timer','Blocker','Profile'
   ];
 
+  final List<Widget> _pages = [
+    const Placeholder(), // Dashboard (not built yet)
+    const Placeholder(), // Task (not built yet)
+    const TimerPage(),   // Timer ✅
+    const Placeholder(), // Blocker (not built yet)
+    const Placeholder(), // Profile (not built yet)
+  ];
+
   //bottom Navigation bar
   void navigateBottomBar(int index){
     setState(() {
@@ -26,9 +35,7 @@ const Homepage({super.key});
   Widget build(context){
       return Scaffold(
         appBar: StyledPageName(pageTitle: _pageTitles[_selectedIndex]),
-        body: Center(
-         // child: StyledPageName('Dashboard'),
-        ),
+        body: _pages[_selectedIndex],
         bottomNavigationBar: BottomNavigationBar(
           currentIndex: _selectedIndex, // when user selects a tab to navigate to
           onTap: navigateBottomBar,
