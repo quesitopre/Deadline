@@ -99,7 +99,7 @@ class _TimerPageState extends State<TimerPage> {
             DropdownButton<int>(
               value: _setDuration ~/ 60 == 0 ? null : _setDuration ~/ 60,
               hint: const Text('Select'),
-              items: [1, 5, 10, 15, 25, 30, 45, 60]
+              items: [1, 2, 5, 10, 15, 25, 30, 45, 60]
                   .map((m) => DropdownMenuItem(value: m, child: Text('$m min')))
                   .toList(),
               onChanged: _isRunning
