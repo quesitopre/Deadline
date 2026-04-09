@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:deadline_app/styled_page_name.dart';
 
 const beginAlignment = Alignment.topLeft; 
 const endAlignment = Alignment.bottomRight;
