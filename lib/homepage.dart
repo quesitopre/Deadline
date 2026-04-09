@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:deadline_app/styled_page_name.dart';
+import 'package:deadline_app/task_page.dart';
+import 'package:deadline_app/blocker.dart';
 
 class Homepage extends StatefulWidget{
 const Homepage({super.key});
@@ -9,6 +11,14 @@ const Homepage({super.key});
 }
   class  _HomepageState extends State<Homepage>{
     int _selectedIndex = 0;
+
+    final List<Widget> _pages = [
+      Center(child: Text('Home Page')),  // index 0 - Home
+      TaskPage(),                         // index 1 - Task
+      Center(child: Text('Timer')),       // index 2 - Timer
+      AppBlocker(),                          // index 3 - Blocker
+      Center(child: Text('Profile')),     // index 4 - Profile
+    ];
  
   //List of page titles
   final List<String> _pageTitles = [
@@ -26,9 +36,10 @@ const Homepage({super.key});
   Widget build(context){
       return Scaffold(
         appBar: StyledPageName(pageTitle: _pageTitles[_selectedIndex]),
-        body: Center(
+        //body: Center(
          // child: StyledPageName('Dashboard'),
-        ),
+        //),
+        body: _pages[_selectedIndex],
         bottomNavigationBar: BottomNavigationBar(
           currentIndex: _selectedIndex, // when user selects a tab to navigate to
           onTap: navigateBottomBar,
