@@ -1,4 +1,4 @@
-import 'package:deadline_app/styled_page_name.dart';
+//import 'package:deadline_app/styled_page_name.dart';
 //import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 
@@ -33,11 +33,11 @@ class _BlockerState extends State<AppBlocker> {
       itemBuilder:(context, index){
         return Card(
           child:Padding(
-            padding: EdgeInsets.all(10),
+            padding: EdgeInsets.all(20),
             child: Row(
               children: [
                 Icon(appIcons[index]),
-                SizedBox(width:12),
+                SizedBox(width:15),
                 Expanded( child: Text(appNames[index])),
                 Switch(
                   value: AppOnOFF[index], 
