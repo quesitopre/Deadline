@@ -7,6 +7,8 @@ class Task {
   DateTime? dueDate;      // ← new
   String taskType;        // ← new
   List<Map<String, int>>? pageRanges;  // ← new
+  int? questionCount;
+  String taskDifficulty; 
 
   Task({
     required this.id,
@@ -17,5 +19,7 @@ class Task {
     this.dueDate,                  // ← new
     this.taskType = 'Other',       // ← new
     this.pageRanges,               // ← new
+    this.questionCount,  
+    this.taskDifficulty = 'Easy',         
   });
 }

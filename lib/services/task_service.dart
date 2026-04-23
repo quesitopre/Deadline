@@ -32,7 +32,9 @@ class TaskService {
         pageRanges: t['pageRanges'] != null
             ? List<Map<String, int>>.from(
                 (t['pageRanges'] as List).map((r) => Map<String, int>.from(r)))
-            : null,                    // ← new
+            : null, 
+        questionCount: t['questionCount'],                   // ← new
+        taskDifficulty: t['taskDifficulty'] ?? 'Easy',
       )));
     }
     _loaded = true;
@@ -49,11 +51,13 @@ class TaskService {
       'dueDate': t.dueDate?.toString(),     // ← new
       'taskType': t.taskType,
       'pageRanges': t.pageRanges,   // ← new
+      'questionCount': t.questionCount,   // ← new
+      'taskDifficulty': t.taskDifficulty,
     }).toList();
     await prefs.setString('tasks', jsonEncode(taskList));
   }
 
-  Future<void> addTask(String title, String description, {DateTime? dueDate, String taskType = 'Other', List<Map<String, int>>? pageRanges}) async {
+  Future<void> addTask(String title, String description, {DateTime? dueDate, String taskType = 'Other', List<Map<String, int>>? pageRanges, int? questionCount, String taskDifficulty = 'Unknown'}) async {
     _tasks.add(Task(
       id: DateTime.now().toString(),
       title: title,
@@ -63,6 +67,8 @@ class TaskService {
       dueDate: dueDate,
       taskType: taskType,
       pageRanges: pageRanges,    // ← new
+      questionCount: questionCount,
+      taskDifficulty: taskDifficulty,
     ));
     await _save();
   }
@@ -90,5 +96,16 @@ class TaskService {
     return _tasks.where((t) => !t.isCompleted).toList();
   }
 
-  
+  List<Task> getTasksSortedByDueDate() {
+    final sorted = List<Task>.from(_tasks);
+    sorted.sort((a, b) {
+      // Tasks with no due date go to the bottom
+      if (a.dueDate == null && b.dueDate == null) return 0;
+      if (a.dueDate == null) return 1;
+      if (b.dueDate == null) return -1;
+      // Sort closest due date to top
+      return a.dueDate!.compareTo(b.dueDate!);
+    });
+    return sorted;
+  }
 }

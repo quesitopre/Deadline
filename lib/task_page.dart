@@ -22,28 +22,28 @@ class _TaskPageState extends State<TaskPage> {
   void _loadTasks() async {
     await _taskService.initialize(); // ← initialize first
     setState(() {
-      _tasks = _taskService.getTasks();
+      _tasks = _taskService.getTasksSortedByDueDate();
     });
   }
 
-  void _addTask(String title, DateTime? dueDate, String taskType, List<Map<String, int>>? pageRanges) async {
-    await _taskService.addTask(title, '', dueDate: dueDate, taskType: taskType, pageRanges: pageRanges);
+  void _addTask(String title, DateTime? dueDate, String taskType, List<Map<String, int>>? pageRanges, int? questionCount, String taskDifficulty) async {
+    await _taskService.addTask(title, '', dueDate: dueDate, taskType: taskType, pageRanges: pageRanges, questionCount: questionCount, taskDifficulty: taskDifficulty,);
     setState(() {
-      _tasks = _taskService.getTasks();
+      _tasks = _taskService.getTasksSortedByDueDate();
     });
   }
 
   void _toggleTask(String id) async {
     await _taskService.toggleTask(id);
     setState(() {
-      _tasks = _taskService.getTasks();
+      _tasks = _taskService.getTasksSortedByDueDate();
     });
   }
 
   void _deleteTask(String id) async {
     await _taskService.deleteTask(id);
     setState(() {
-      _tasks = _taskService.getTasks();
+      _tasks = _taskService.getTasksSortedByDueDate();
     });
   }
 
@@ -83,10 +83,28 @@ class _TaskPageState extends State<TaskPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text('Type: ${task.taskType}'),
+                    Row(
+                      children: [
+                        Text('Difficulty: '),
+                        Text(
+                          task.taskDifficulty,
+                          style: TextStyle(
+                            color: task.taskDifficulty == 'Easy'
+                                ? Colors.green
+                                : task.taskDifficulty == 'Medium'
+                                    ? Colors.orange
+                                    : Colors.red,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
                     if (task.dueDate != null)
                       Text('Due: ${task.dueDate!.month}/${task.dueDate!.day}/${task.dueDate!.year}'),
                     if (task.pageRanges != null && task.pageRanges!.isNotEmpty)
                       Text('Pages: ${task.pageRanges!.map((r) => '${r['start']}-${r['end']}').join(', ')}'),
+                    if (task.questionCount != null)
+                      Text('Questions: ${task.questionCount}'),
                   ],
                 ),
                 trailing: IconButton(
@@ -105,12 +123,14 @@ class _TaskPageState extends State<TaskPage> {
     final TextEditingController titleController = TextEditingController();
     DateTime? selectedDate;
     String selectedType = 'Other';
+    String selectedDifficulty = 'Easy';
     List<Map<String, TextEditingController>> pageRanges = [
       {
         'start': TextEditingController(),
         'end': TextEditingController(),
       }
     ];
+    TextEditingController questionCountController = TextEditingController();
 
     final List<String> taskTypes = [
       'Problem Set',
@@ -118,6 +138,12 @@ class _TaskPageState extends State<TaskPage> {
       'Essay',
       'Writing',
       'Other'
+    ];
+
+    final List<String> taskDifficulties = [
+      'Easy',
+      'Medium',
+      'Hard'
     ];
 
     showDialog(
@@ -137,8 +163,51 @@ class _TaskPageState extends State<TaskPage> {
                 ),
               ),
               SizedBox(height: 16),
-
-              // 2. Due date picker
+              // 2. Task Difficulty buttons
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Difficulty', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+                  SizedBox(height: 8),
+                  Row(
+                    children: ['Easy', 'Medium', 'Hard'].map((difficulty) {
+                      final isSelected = selectedDifficulty == difficulty;
+                      final color = difficulty == 'Easy'
+                          ? Colors.green
+                          : difficulty == 'Medium'
+                              ? Colors.orange
+                              : Colors.red;
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 8.0),
+                        child: GestureDetector(
+                          onTap: () {
+                            setDialogState(() {
+                              selectedDifficulty = difficulty;
+                            });
+                          },
+                          child: Container(
+                            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: isSelected ? color : Colors.transparent,
+                              border: Border.all(color: color),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(
+                              difficulty,
+                              style: TextStyle(
+                                color: isSelected ? Colors.white : color,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ],
+              ),
+              SizedBox(height: 16),
+              // 3. Due date picker
               Row(
                 children: [
                   Expanded(
@@ -169,7 +238,7 @@ class _TaskPageState extends State<TaskPage> {
               ),
               SizedBox(height: 16),
 
-              // 3. Task type dropdown
+              // 4. Task type dropdown
               DropdownButtonFormField<String>(
                 value: selectedType,
                 decoration: InputDecoration(
@@ -188,7 +257,7 @@ class _TaskPageState extends State<TaskPage> {
                 },
               ),
 
-              // 4. Page ranges - directly below dropdown, only shows for Reading
+              // Page ranges - only shows for Reading
               if (selectedType == 'Reading') ...[
                 SizedBox(height: 16),
                 Row(
@@ -259,6 +328,18 @@ class _TaskPageState extends State<TaskPage> {
                   );
                 }).toList(),
               ],
+              // Question count - only show for Problem Set
+              if (selectedType == 'Problem Set') ...[
+                SizedBox(height: 16),
+                TextField(
+                  controller: questionCountController,
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(
+                    labelText: 'Number of Questions',
+                    hintText: 'e.g. 20',
+                  ),
+                ),
+              ],
             ],
           ),
           actions: [
@@ -282,7 +363,15 @@ class _TaskPageState extends State<TaskPage> {
                             })
                         .toList();
                   }
-                  _addTask(titleController.text, selectedDate, selectedType, ranges);
+
+                  // Parse question count for Problem Set
+                  int? questionCount;
+                  if (selectedType == 'Problem Set' && 
+                      questionCountController.text.isNotEmpty) {
+                    questionCount = int.tryParse(questionCountController.text);
+                  }
+
+                  _addTask(titleController.text, selectedDate, selectedType, ranges, questionCount, selectedDifficulty);
                   Navigator.pop(context);
                 }
               },
