@@ -12,6 +12,7 @@ class TaskPage extends StatefulWidget {
 class _TaskPageState extends State<TaskPage> {
   final TaskService _taskService = TaskService();
   List<Task> _tasks = [];
+  String? _activeFilter; // null means show all tasks
 
   @override
   void initState() {
@@ -46,14 +47,89 @@ class _TaskPageState extends State<TaskPage> {
       _tasks = _taskService.getTasksSortedByDueDate();
     });
   }
+  
+  List<Task> get _filteredTasks {
+    if (_activeFilter == null) return _tasks;
+    return _tasks.where((t) => t.taskDifficulty == _activeFilter).toList();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
+        // Filter buttons
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+          child: Row(
+            children: [
+              Text('Filter: ', style: TextStyle(fontWeight: FontWeight.bold)),
+              SizedBox(width: 8),
+              // All button
+              Padding(
+                padding: const EdgeInsets.only(right: 8.0),
+                child: GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      _activeFilter = null;
+                    });
+                  },
+                  child: Container(
+                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: _activeFilter == null ? Colors.blue : Colors.transparent,
+                      border: Border.all(color: Colors.blue),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      'All',
+                      style: TextStyle(
+                        color: _activeFilter == null ? Colors.white : Colors.blue,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              // Easy, Medium, Hard buttons
+              ...['Easy', 'Medium', 'Hard'].map((difficulty) {
+                final isSelected = _activeFilter == difficulty;
+                final color = difficulty == 'Easy'
+                    ? Colors.green
+                    : difficulty == 'Medium'
+                        ? Colors.orange
+                        : Colors.red;
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8.0),
+                  child: GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _activeFilter = isSelected ? null : difficulty;
+                      });
+                    },
+                    child: Container(
+                      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: isSelected ? color : Colors.transparent,
+                        border: Border.all(color: color),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        difficulty,
+                        style: TextStyle(
+                          color: isSelected ? Colors.white : color,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ],
+          ),
+        ),
         // Add task button
         Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
           child: ElevatedButton.icon(
             onPressed: () => _showAddTaskDialog(context),
             icon: Icon(Icons.add),
@@ -63,9 +139,9 @@ class _TaskPageState extends State<TaskPage> {
         // Task list
         Expanded(
           child: ListView.builder(
-            itemCount: _tasks.length,
+            itemCount: _filteredTasks.length,
             itemBuilder: (context, index) {
-              final task = _tasks[index];
+              final task = _filteredTasks[index];
               return ListTile(
                 leading: Checkbox(
                   value: task.isCompleted,
