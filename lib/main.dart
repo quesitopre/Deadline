@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 //dashboard style sheet
 import 'package:deadline_app/homepage.dart';
-import 'package:flutter_overlay_window/flutter_overlay_window.dart';
+import 'package:_overlay_window.dart';
 void main() {
   runApp(
      MaterialApp(
