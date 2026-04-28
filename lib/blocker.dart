@@ -1,6 +1,8 @@
 //import 'package:deadline_app/styled_page_name.dart';
 //import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_overlay_window/flutter_overlay_window.dart';
+
 
 class AppBlocker extends StatefulWidget {
   const AppBlocker({super.key});
@@ -10,7 +12,29 @@ class AppBlocker extends StatefulWidget {
 }
 
 class _BlockerState extends State<AppBlocker> {
-  
+  Future<void> _toggleOverlay(String appName, bool enable) async{
+    if(enable) {
+      final bool granted = await FlutterOverlayWindow.isPermissionGranted();
+      if(!granted) {
+        await FlutterOverlayWindow.requestPermission();
+        return;
+      }
+      await FlutterOverlayWindow.showOverlay(
+        enableDrag: false,
+        flag: OverlayFlag.defaultFlag,
+        visibility: NotificationVisibility.visibilityPublic,
+        positionGravity: PositionGravity.right, // no const name 'fill'
+      );
+      // send app name to overlay
+      await FlutterOverlayWindow.shareData({
+        'appName': appName,
+        'seconds': 25* 60,
+      });
+    } else {
+      await FlutterOverlayWindow.closeOverlay();
+    }
+  }
+
   final List<String> appNames =[
     'Instagram', 'Youtube', 'Tiktok','Twitter/X', 'Reddit','Snapchat'
   ];
@@ -44,6 +68,7 @@ class _BlockerState extends State<AppBlocker> {
                     setState(() {
                   AppOnOFF[index] = value;
                  });
+                 _toggleOverlay(appNames[index], value);
                 },
               ),
             ],

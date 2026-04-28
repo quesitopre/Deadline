@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_overlay_window/flutter_overlay_window.dart';
-import 'package:deadline_app/timer.dart';
 
 class FocusOverlay extends StatefulWidget {
   const FocusOverlay({super.key});
@@ -45,12 +44,12 @@ class _FocusOverlayState extends State<FocusOverlay> {
  Widget build(BuildContext context){
   return Material(
    // color: Colors.black.withOpacity(opacity) //'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss.
-    child: SafeArea(child: 
+    child: SafeArea(
     child: Center(  
       child: Padding( 
         padding: const EdgeInsets.symmetric(horizontal: 28),
         child: Column(  
-          mainAxisAlignment: mainAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             // lock icon circle
             Container(  
@@ -65,8 +64,8 @@ class _FocusOverlayState extends State<FocusOverlay> {
             const SizedBox(height:28),
 
             Text( 
-              _blockedAppName.isnotEmpty 
-                ? '$ _blockedAppName is Blocked'
+              _blockedAppName.isNotEmpty 
+                ? '$_blockedAppName is Blocked'
                 : 'App blocked',
               style: const TextStyle(  
                 color: Colors.white,
@@ -86,7 +85,7 @@ class _FocusOverlayState extends State<FocusOverlay> {
               const SizedBox(height: 8),
               Text( 
                 _formatTime(_remainingSeconds),
-                style: cosnt TextStyle( 
+                style: const TextStyle( 
                   color: Colors.white,
                   fontSize:56,
                   fontWeight: FontWeight.bold,
@@ -99,9 +98,8 @@ class _FocusOverlayState extends State<FocusOverlay> {
                 style: TextStyle( color: Colors.white54, fontSize: 14),
               ),
             ],
-          ]
 
-          const SizedBox(heihgt:48),
+          const SizedBox(height: 48),
 
           SizedBox(  
             width: double.infinity,
@@ -121,8 +119,9 @@ class _FocusOverlayState extends State<FocusOverlay> {
               ),
             ),
           ),
-        ),
+         ],
       ),
+    ),
     ),
     ),
   );
