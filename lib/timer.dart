@@ -11,7 +11,10 @@ class TimerPage extends StatefulWidget {
   State<TimerPage> createState() => _TimerPageState();
 }
 
-class _TimerPageState extends State<TimerPage> {
+class _TimerPageState extends State<TimerPage>  with AutomaticKeepAliveClientMixin{
+  @override
+  bool get wantKeepAlive => true;
+
   Timer? _timer;
   bool _isRunning = false;
 
@@ -133,6 +136,7 @@ class _TimerPageState extends State<TimerPage> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final config = _modeConfig[_currentMode]!;
 
     return SingleChildScrollView(
