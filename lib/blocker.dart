@@ -64,6 +64,15 @@ class _BlockerState extends State<AppBlocker> with AutomaticKeepAliveClientMixin
       }
     });
   }
+
+  void _syncBlockedApps() {
+    final blockedApps = <String>[];
+    for(int i =0; i< appNames.length; i++){
+      if(AppOnOFF[i]) blockedApps.add(appNames[i]);
+    }
+    const MethodChannel('deadline_app/blocker')
+        .invokeListMethod('updateBlockedApps', {'apps': blockedApps});
+  }
   
 
  @override
@@ -88,9 +97,14 @@ class _BlockerState extends State<AppBlocker> with AutomaticKeepAliveClientMixin
                     setState(() {
                   AppOnOFF[index] = value;
                  });
-                 _toggleOverlay(appNames[index], value);
-                },
-              ),
+                 _syncBlockedApps();
+                 if(value){
+                 _toggleOverlay(appNames[index], true);
+                }else{
+                  FlutterOverlayWindow.closeOverlay();
+                }
+              },
+            ),
             ],
             ),
           ),
