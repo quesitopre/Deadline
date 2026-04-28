@@ -16,7 +16,7 @@ class _BlockerState extends State<AppBlocker> {
     if(enable) {
       final bool granted = await FlutterOverlayWindow.isPermissionGranted();
       if(!granted) {
-        await FlutterOverlayWindow.requestPermission();
+        await FlutterOverlayWindow.requestPermission(); // request user permission
         return;
       }
       await FlutterOverlayWindow.showOverlay(

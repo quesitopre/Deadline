@@ -20,13 +20,19 @@ class _HomepageState extends State<Homepage> {
     'Dashboard', 'Task', 'Timer', 'Blocker', 'Profile'
   ];
 
-  final List<Widget> _pages = [
+  late final List<Widget> _pages;
+  
+  @override
+  void initState(){
+    super.initState();
+    _pages = [
     const Dashboard(),   // Dashboard (not built yet)
     TaskPage(),   // Task (not built yet) const might not be needed for this
     const TimerPage(),     // Timer ✅
     const AppBlocker(),    // Blocker ✅
     const Placeholder(),   // Profile (not built yet)
-  ];
+    ];
+  }
 
   //bottom Navigation bar
   void navigateBottomBar(int index) {
@@ -39,7 +45,11 @@ class _HomepageState extends State<Homepage> {
   Widget build(context) {
     return Scaffold(
       appBar: StyledPageName(pageTitle: _pageTitles[_selectedIndex]),
-      body: _pages[_selectedIndex],
+      body: 
+      IndexedStack(
+        index: _selectedIndex,
+        children:_pages,
+      ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: navigateBottomBar,
