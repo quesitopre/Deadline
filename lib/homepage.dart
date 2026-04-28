@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:deadline_app/styled_page_name.dart';
+import 'package:deadline_app/task_page.dart';
 import 'package:deadline_app/timer.dart';
 import 'package:deadline_app/blocker.dart';
+import 'package:deadline_app/dashboard.dart';
 
 class Homepage extends StatefulWidget {
   const Homepage({super.key});
@@ -19,8 +21,8 @@ class _HomepageState extends State<Homepage> {
   ];
 
   final List<Widget> _pages = [
-    const Placeholder(),   // Dashboard (not built yet)
-    const Placeholder(),   // Task (not built yet)
+    const Dashboard(),   // Dashboard (not built yet)
+    TaskPage(),   // Task (not built yet) const might not be needed for this
     const TimerPage(),     // Timer ✅
     const AppBlocker(),    // Blocker ✅
     const Placeholder(),   // Profile (not built yet)
