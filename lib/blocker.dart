@@ -11,7 +11,7 @@ class AppBlocker extends StatefulWidget {
 
 class _BlockerState extends State<AppBlocker> {
   
-   final List<String> appNames =[
+  final List<String> appNames =[
     'Instagram', 'Youtube', 'Tiktok','Twitter/X', 'Reddit','Snapchat'
   ];
 
@@ -25,7 +25,6 @@ class _BlockerState extends State<AppBlocker> {
 
  @override
   Widget build(BuildContext context) {
-
     // switch toggle here 
     // beginning of card
     return ListView.builder(
@@ -41,7 +40,7 @@ class _BlockerState extends State<AppBlocker> {
                 Expanded( child: Text(appNames[index])),
                 Switch(
                   value: AppOnOFF[index], 
-                  onChanged: (value) {
+                  onChanged: (value){
                     setState(() {
                   AppOnOFF[index] = value;
                  });
