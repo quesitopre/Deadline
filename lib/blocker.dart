@@ -11,7 +11,10 @@ class AppBlocker extends StatefulWidget {
   State<AppBlocker> createState() => _BlockerState(); //_BlockerState instantiating
 }
 
-class _BlockerState extends State<AppBlocker> {
+class _BlockerState extends State<AppBlocker> with AutomaticKeepAliveClientMixin { //keeps widget alive: toggle alive
+ @override 
+ bool get wantKeepAlive => true; 
+
   Future<void> _toggleOverlay(String appName, bool enable) async{
     if(enable) {
       final bool granted = await FlutterOverlayWindow.isPermissionGranted();
@@ -51,6 +54,7 @@ class _BlockerState extends State<AppBlocker> {
   Widget build(BuildContext context) {
     // switch toggle here 
     // beginning of card
+    super.build(context);
     return ListView.builder(
       itemCount:appNames.length,
       itemBuilder:(context, index){
