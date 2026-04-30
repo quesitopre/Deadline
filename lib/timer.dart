@@ -1,4 +1,4 @@
-
+import 'package:flutter/services.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 
@@ -67,6 +67,7 @@ class _TimerPageState extends State<TimerPage>  with AutomaticKeepAliveClientMix
   void startTimer() {
     if (_isRunning) return;
     setState(() => _isRunning = true);
+    _notifyTimerState(true);
 
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (_seconds == 0) {
@@ -95,6 +96,7 @@ class _TimerPageState extends State<TimerPage>  with AutomaticKeepAliveClientMix
   void stopTimer() {
     _timer?.cancel();
     setState(() => _isRunning = false);
+    _notifyTimerState(false);
   }
 
   void resetTimer() {
@@ -103,6 +105,7 @@ class _TimerPageState extends State<TimerPage>  with AutomaticKeepAliveClientMix
       _seconds = _durations[_currentMode]!;
       _isRunning = false;
     });
+    _notifyTimerState(false);
   }
 
   void resetAll() {
@@ -113,7 +116,13 @@ class _TimerPageState extends State<TimerPage>  with AutomaticKeepAliveClientMix
       _isRunning = false;
       _pomodoroCount = 0;
     });
+    _notifyTimerState(false);
   }
+
+void _notifyTimerState(bool running){
+  const MethodChannel('deadline_app/blocker')
+    .invokeMethod('updateTimerState', {'running': running});
+}
 
   String formatTime(int seconds) {
     final m = (seconds ~/ 60).toString().padLeft(2, '0');
