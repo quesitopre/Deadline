@@ -4,6 +4,8 @@ import 'package:deadline_app/task_page.dart';
 import 'package:deadline_app/timer.dart';
 import 'package:deadline_app/blocker.dart';
 import 'package:deadline_app/dashboard.dart';
+import 'package:deadline_app/profile.dart';
+import 'package:deadline_app/course.dart';
 
 class Homepage extends StatefulWidget {
   const Homepage({super.key});
@@ -18,6 +20,29 @@ class _HomepageState extends State<Homepage> {
   //List of page titles
   final List<String> _pageTitles = [
     'Dashboard', 'Task', 'Timer', 'Blocker', 'Profile'
+  ];
+
+  final List<Widget> _pages = [
+    const Dashboard(),   // Dashboard (not built yet)
+    TaskPage(),   // Task (not built yet) const might not be needed for this
+    const TimerPage(),     // Timer ✅
+    const AppBlocker(),    // Blocker ✅
+    Profile(studentName: 'studentName', studentID: 'studentID', email: 'email', courses: const [
+    Course(
+      name: 'Computer Science 101',
+      code: 'CS101',
+      subject:'Computer Science',
+      grade: 91.5,
+      creditHours: 3,
+    ),
+    Course(
+      name: 'Calculus II',
+      code: 'MATH202',
+      subject:'Mathematics',
+      grade: 78.0,
+      creditHours: 4,
+    ),
+  ])
   ];
 
   late final List<Widget> _pages;
