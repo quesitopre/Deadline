@@ -42,7 +42,7 @@ class _BlockerState extends State<AppBlocker> with AutomaticKeepAliveClientMixin
     'Instagram', 'Youtube', 'Tiktok','Twitter/X', 'Reddit','Snapchat'
   ];
 
-  final List<bool> AppOnOFF =[
+  final List<bool> _appOnOff =[
     false,false,false, false, false,false,
   ];
 
@@ -58,7 +58,7 @@ class _BlockerState extends State<AppBlocker> with AutomaticKeepAliveClientMixin
       if (call.method == 'showOverlay') {
         final appName = call.arguments['appName'] as String;
         final index = appNames.indexOf(appName);
-        if (index != -1 && AppOnOFF[index]) {
+        if (index != -1 && _appOnOff[index]) {
           await _toggleOverlay(appName, true);
         }
       }
@@ -68,7 +68,7 @@ class _BlockerState extends State<AppBlocker> with AutomaticKeepAliveClientMixin
   void _syncBlockedApps() {
     final blockedApps = <String>[];
     for(int i =0; i< appNames.length; i++){
-      if(AppOnOFF[i]) blockedApps.add(appNames[i]);
+      if(_appOnOff[i]) blockedApps.add(appNames[i]);
     }
     const MethodChannel('deadline_app/blocker')
         .invokeListMethod('updateBlockedApps', {'apps': blockedApps});
@@ -92,10 +92,10 @@ class _BlockerState extends State<AppBlocker> with AutomaticKeepAliveClientMixin
                 SizedBox(width:15),
                 Expanded( child: Text(appNames[index])),
                 Switch(
-                  value: AppOnOFF[index], 
+                  value: _appOnOff[index], 
                   onChanged: (value){
                     setState(() {
-                  AppOnOFF[index] = value;
+                  _appOnOff[index] = value;
                  });
                  _syncBlockedApps();
                  if(value){

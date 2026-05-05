@@ -123,10 +123,11 @@ class _TaskPageState extends State<TaskPage> {
                     ),
                   ),
                 );
-              }).toList(),
-            ],
-          ),
+              }
+            )
+          ],
         ),
+      ),
         // Add task button
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -316,7 +317,7 @@ class _TaskPageState extends State<TaskPage> {
 
               // 4. Task type dropdown
               DropdownButtonFormField<String>(
-                value: selectedType,
+                initialValue: selectedType,
                 decoration: InputDecoration(
                   labelText: 'Task Type',
                 ),
@@ -402,8 +403,9 @@ class _TaskPageState extends State<TaskPage> {
                       ],
                     ),
                   );
-                }).toList(),
-              ],
+                }
+              )
+           ],
               // Question count - only show for Problem Set
               if (selectedType == 'Problem Set') ...[
                 SizedBox(height: 16),

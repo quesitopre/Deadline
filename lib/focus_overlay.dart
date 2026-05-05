@@ -55,7 +55,7 @@ class _FocusOverlayState extends State<FocusOverlay> {
             Container(  
               padding: const EdgeInsets.all(22),
               decoration:BoxDecoration( 
-                color: Colors.redAccent.withOpacity(0.15),
+                color: Colors.redAccent.withValues(alpha: 0.15),
                 shape: BoxShape.circle,
                 border: Border.all(color: Colors.redAccent, width:2),
               ),
