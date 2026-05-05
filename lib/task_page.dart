@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'services/task_service.dart';
 import 'models/task.dart';
+import 'package:deadline_app/models/task_schedule.dart';
 
 class TaskPage extends StatefulWidget {
   const TaskPage({super.key});
@@ -142,52 +143,106 @@ class _TaskPageState extends State<TaskPage> {
             itemCount: _filteredTasks.length,
             itemBuilder: (context, index) {
               final task = _filteredTasks[index];
-              return ListTile(
-                leading: Checkbox(
-                  value: task.isCompleted,
-                  onChanged: (_) => _toggleTask(task.id),
-                ),
-                title: Text(
-                  task.title,
-                  style: TextStyle(
-                    decoration: task.isCompleted
-                        ? TextDecoration.lineThrough
-                        : TextDecoration.none,
+              final schedule = task.taskType == 'Problem Set'
+                  ? _taskService.calculateProblemSetSchedule(task)
+                  : null;
+              return Card(
+                margin: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                child: ExpansionTile(
+                  enabled: schedule != null,
+                  leading: Checkbox(
+                    value: task.isCompleted,
+                    onChanged: (_) => _toggleTask(task.id),
                   ),
-                ),
-                subtitle: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Type: ${task.taskType}'),
-                    Row(
-                      children: [
-                        Text('Difficulty: '),
-                        Text(
-                          task.taskDifficulty,
-                          style: TextStyle(
-                            color: task.taskDifficulty == 'Easy'
-                                ? Colors.green
-                                : task.taskDifficulty == 'Medium'
-                                    ? Colors.orange
-                                    : Colors.red,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
+                  title: Text(
+                    task.title,
+                    style: TextStyle(
+                      decoration: task.isCompleted
+                          ? TextDecoration.lineThrough
+                          : TextDecoration.none,
                     ),
-                    if (task.dueDate != null)
-                      Text('Due: ${task.dueDate!.month}/${task.dueDate!.day}/${task.dueDate!.year}'),
-                    if (task.pageRanges != null && task.pageRanges!.isNotEmpty)
-                      Text('Pages: ${task.pageRanges!.map((r) => '${r['start']}-${r['end']}').join(', ')}'),
-                    if (task.questionCount != null)
-                      Text('Questions: ${task.questionCount}'),
-                  ],
-                ),
-                trailing: IconButton(
-                  icon: Icon(Icons.delete, color: Colors.red),
-                  onPressed: () => _deleteTask(task.id),
-                ),
-              );
+                  ),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Type: ${task.taskType}'),
+                      Row(
+                        children: [
+                          Text('Difficulty: '),
+                          Text(
+                            task.taskDifficulty,
+                            style: TextStyle(
+                              color: task.taskDifficulty == 'Easy'
+                                  ? Colors.green
+                                  : task.taskDifficulty == 'Medium'
+                                      ? Colors.orange
+                                      : Colors.red,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (task.dueDate != null)
+                        Text('Due: ${task.dueDate!.month}/${task.dueDate!.day}/${task.dueDate!.year}'),
+                      if (task.pageRanges != null && task.pageRanges!.isNotEmpty)
+                        Text('Pages: ${task.pageRanges!.map((r) => '${r['start']}-${r['end']}').join(', ')}'),
+                      if (task.questionCount != null)
+                        Text('Questions: ${task.questionCount}'),
+                      if (schedule != null)
+                        Text(
+                          'Tap to see study schedule',
+                          style: TextStyle(color: Colors.blue, fontSize: 12),
+                        ),
+                    ],
+                  ),
+                  trailing: IconButton(                    // ← only ONE trailing here
+                    icon: Icon(Icons.delete, color: Colors.red),
+                    onPressed: () => _deleteTask(task.id),
+                  ),
+                  children: [                              // ← children belongs to ExpansionTile
+                    if (schedule != null)
+                      Container(
+                        padding: EdgeInsets.all(16),
+                        color: Colors.blue[50],
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '📅 Recommended Study Schedule',
+                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                            ),
+                            SizedBox(height: 8),
+                            Text('Total problems: ${schedule.totalProblems}'),
+                            Text('Days to complete: ${schedule.daysToComplete}'),
+                            Text('Days remaining: ${schedule.remainingDays}'),
+                            Divider(),
+                            Row(
+                              children: [
+                                Icon(Icons.today, size: 16, color: Colors.blue),
+                                SizedBox(width: 8),
+                                Text(
+                                  'Day 1: ${schedule.problemsFirstDay} problems',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                              ],
+                            ),
+                            SizedBox(height: 4),
+                            Row(
+                              children: [
+                                Icon(Icons.calendar_month, size: 16, color: Colors.blue),
+                                SizedBox(width: 8),
+                                Text(
+                                  'Days 2-${schedule.daysToComplete}: ${schedule.problemsRestOfDays} problems/day',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],                                       // ← closes ExpansionTile children
+                ),                                         // ← closes ExpansionTile
+              );   
             },
           ),
         ),

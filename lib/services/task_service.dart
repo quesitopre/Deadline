@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/task.dart';
+import '../models/task_schedule.dart';
 
 class TaskService {
   // Singleton pattern - only one instance ever exists
@@ -107,5 +108,108 @@ class TaskService {
       return a.dueDate!.compareTo(b.dueDate!);
     });
     return sorted;
+  }
+
+  int hoursUntilNearestTask() {
+    final pending = getPendingTasks()
+        .where((t) => t.dueDate != null)
+        .toList();
+
+    if (pending.isEmpty) return 0;
+
+    // Sort by due date to find the nearest task
+    pending.sort((a, b) => a.dueDate!.compareTo(b.dueDate!));
+    final nearest = pending.first;
+
+    // Set due time to 11:59 PM on the due date
+    final dueDateTime = DateTime(
+      nearest.dueDate!.year,
+      nearest.dueDate!.month,
+      nearest.dueDate!.day,
+      23,
+      59,
+    );
+
+    final now = DateTime.now();
+
+    // If already past due return 0
+    if (dueDateTime.isBefore(now)) return 0;
+
+    // Return hours remaining
+    final hours = dueDateTime.difference(now).inHours;
+    return hours > 999 ? 999 : hours; // ← cap at 999 -> roughly 41 days when divided by 24
+  }
+
+  int hoursSinceNearestTaskOverdue() {
+    final pending = getPendingTasks()
+        .where((t) => t.dueDate != null)
+        .toList();
+
+    if (pending.isEmpty) return 0;
+
+    // Sort by due date to find the nearest task
+    pending.sort((a, b) => a.dueDate!.compareTo(b.dueDate!));
+    final nearest = pending.first;
+
+    // Set due time to 11:59 PM on the due date
+    final dueDateTime = DateTime(
+      nearest.dueDate!.year,
+      nearest.dueDate!.month,
+      nearest.dueDate!.day,
+      23,
+      59,
+    );
+
+    final now = DateTime.now();
+
+    // If NOT already past due return 0
+    if (!dueDateTime.isBefore(now)) return 0;
+
+    // Hours past due date
+    final hours = now.difference(dueDateTime).inHours;
+    return hours > 999 ? 999 : hours; // ← cap at 999 -> roughly 41 days when divided by 24
+  }
+
+  TaskSchedule? calculateProblemSetSchedule(Task task) {
+    // Only works for Problem Set tasks with questionCount and dueDate
+    if (task.taskType != 'Problem Set') return null;
+    if (task.questionCount == null || task.dueDate == null) return null;
+    if (task.isCompleted) return null;
+
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final due = DateTime(task.dueDate!.year, task.dueDate!.month, task.dueDate!.day);
+
+    // Days until due date
+    final daysUntilDue = due.difference(today).inDays;
+    if (daysUntilDue <= 0) return null; // already due
+
+    // How many days to spread work based on difficulty
+    final int daysToComplete;
+    if (task.taskDifficulty == 'Easy') {
+      daysToComplete = 7;
+    } else if (task.taskDifficulty == 'Medium') {
+      daysToComplete = 14;
+    } else {
+      daysToComplete = 21;
+    }
+
+    // Use whichever is smaller - recommended days or days actually remaining
+    final int workDays = daysToComplete < daysUntilDue ? daysToComplete : daysUntilDue;
+
+    final int total = task.questionCount!;
+    final double perDay = total / workDays;
+
+    // First day gets the remainder, rest get the floor
+    final int problemsRestOfDays = perDay.floor();
+    final int problemsFirstDay = total - (problemsRestOfDays * (workDays - 1));
+
+    return TaskSchedule(
+      totalProblems: total,
+      daysToComplete: workDays,
+      problemsFirstDay: problemsFirstDay,
+      problemsRestOfDays: problemsRestOfDays,
+      remainingDays: daysUntilDue,
+    );
   }
 }
