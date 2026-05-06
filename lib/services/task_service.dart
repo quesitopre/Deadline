@@ -19,7 +19,7 @@ class TaskService {
   Future<void> initialize() async {
     if (_loaded) return;
     final prefs = await SharedPreferences.getInstance();
-    //await prefs.remove('tasks'); Resets app to have no tasks
+    //await prefs.remove('tasks'); // Resets app to have no tasks, use if tasks corrupted
     final String? data = prefs.getString('tasks');
     if (data != null) {
       final List decoded = jsonDecode(data);
@@ -171,30 +171,18 @@ class TaskService {
     return hours > 999 ? 999 : hours; // ← cap at 999 -> roughly 41 days when divided by 24
   }
 
-  TaskSchedule? calculateProblemSetSchedule(Task task) {
-    /* for testing purposes
-    print('Calculating schedule for: ${task.title}');
-    print('taskType: ${task.taskType}');
-    print('questionCount: ${task.questionCount}');
-    print('dueDate: ${task.dueDate}');
-    print('taskDifficulty: "${task.taskDifficulty}"');  // ← check for empty string
-    print('isCompleted: ${task.isCompleted}');
-    */
-
-    // Only works for Problem Set tasks with questionCount and dueDate
-    if (task.taskType != 'Problem Set') return null;
-    if (task.questionCount == null || task.dueDate == null) return null;
+  TaskSchedule? calculateTaskSchedule(Task task) {
     if (task.isCompleted) return null;
+    if (task.dueDate == null) return null;
 
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final due = DateTime(task.dueDate!.year, task.dueDate!.month, task.dueDate!.day);
 
-    // Days until due date
     final daysUntilDue = due.difference(today).inDays;
-    if (daysUntilDue <= 0) return null; // already due
+    if (daysUntilDue <= 0) return null;
 
-    // How many days to spread work based on difficulty
+    // How many days based on difficulty
     final int daysToComplete;
     if (task.taskDifficulty == 'Easy') {
       daysToComplete = 7;
@@ -204,22 +192,34 @@ class TaskService {
       daysToComplete = 21;
     }
 
-    // Use whichever is smaller - recommended days or days actually remaining
     final int workDays = daysToComplete < daysUntilDue ? daysToComplete : daysUntilDue;
 
-    final int total = task.questionCount!;
-    final double perDay = total / workDays;
+    // Get the total count based on task type
+    final int? total;
+    if (task.taskType == 'Problem Set' && task.questionCount != null) {
+      total = task.questionCount;
+    } else if (task.taskType == 'Reading' && 
+              task.pageRanges != null && 
+              task.pageRanges!.isNotEmpty) {
+      // Add up all pages across all ranges
+      total = task.pageRanges!.fold(0, (sum, r) => sum! + ((r['end'] as int) - (r['start'] as int) + 1));
+    } else {
+      return null; // unsupported task type
+    }
 
-    // First day gets the remainder, rest get the floor
-    final int problemsRestOfDays = perDay.floor();
-    final int problemsFirstDay = total - (problemsRestOfDays * (workDays - 1));
+    if (total == null || total <= 0) return null;
+
+    final double perDay = total / workDays;
+    final int perDayFloor = perDay.floor();
+    final int firstDay = total - (perDayFloor * (workDays - 1));
 
     return TaskSchedule(
-      totalProblems: total,
+      total: total,
       daysToComplete: workDays,
-      problemsFirstDay: problemsFirstDay,
-      problemsRestOfDays: problemsRestOfDays,
+      firstDayCount: firstDay,
+      remainingDaysCount: perDayFloor,
       remainingDays: daysUntilDue,
+      unit: task.taskType == 'Problem Set' ? 'problems' : 'pages', // ← new
     );
   }
 }

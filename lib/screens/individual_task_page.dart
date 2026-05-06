@@ -145,7 +145,7 @@ class IndividualTaskPage extends StatelessWidget {
     );
   }
 
-  Widget _buildScheduleCard(TaskSchedule schedule) {  // ← takes schedule as parameter
+  Widget _buildScheduleCard(TaskSchedule schedule) {
     return Card(
       color: Colors.blue[50],
       child: Padding(
@@ -158,7 +158,7 @@ class IndividualTaskPage extends StatelessWidget {
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             Divider(),
-            _buildScheduleRow(Icons.calculate, 'Total Problems', '${schedule.totalProblems}'),
+            _buildScheduleRow(Icons.calculate, 'Total ${schedule.unit}', '${schedule.total}'),
             SizedBox(height: 8),
             _buildScheduleRow(Icons.today, 'Days to Complete', '${schedule.daysToComplete}'),
             SizedBox(height: 8),
@@ -169,7 +169,7 @@ class IndividualTaskPage extends StatelessWidget {
                 Icon(Icons.looks_one, color: Colors.blue),
                 SizedBox(width: 8),
                 Text(
-                  'Day 1: ${schedule.problemsFirstDay} problems',
+                  'Day 1: ${schedule.firstDayCount} ${schedule.unit}',
                   style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                 ),
               ],
@@ -180,7 +180,7 @@ class IndividualTaskPage extends StatelessWidget {
                 Icon(Icons.calendar_month, color: Colors.blue),
                 SizedBox(width: 8),
                 Text(
-                  'Days 2-${schedule.daysToComplete}: ${schedule.problemsRestOfDays} problems/day',
+                  'Days 2-${schedule.daysToComplete}: ${schedule.remainingDaysCount} ${schedule.unit}/day',
                   style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                 ),
               ],
