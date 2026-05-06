@@ -15,6 +15,13 @@ class IndividualTaskPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    /* For testing purposes
+    print('Task type: ${task.taskType}');
+    print('Task difficulty: ${task.taskDifficulty}');
+    print('Question count: ${task.questionCount}');
+    print('Due date: ${task.dueDate}');
+    print('Schedule: $schedule'); 
+    */
     return Scaffold(
       appBar: AppBar(
         title: Text(task.title),

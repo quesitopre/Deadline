@@ -3,6 +3,7 @@ import 'services/task_service.dart';
 import 'models/task.dart';
 import 'package:deadline_app/models/task_schedule.dart';
 import 'package:deadline_app/screens/individual_task_page.dart';
+import 'package:deadline_app/models/task_schedule.dart';
 
 class TaskPage extends StatefulWidget {
   const TaskPage({super.key});
@@ -45,6 +46,13 @@ class _TaskPageState extends State<TaskPage> {
 
   void _refreshTasks() { //schedule calc extracted to avoid repetition
     _tasks = _taskService.getTasksSortedByDueDate();
+    _schedules = {
+      for (var task in _tasks)
+        task.id: task.taskType == 'Problem Set'
+            ? _taskService.calculateProblemSetSchedule(task)
+            : null
+    };
+    //print('Schedules: $_schedules'); for debugging
   }
   
   List<Task> get _filteredTasks {

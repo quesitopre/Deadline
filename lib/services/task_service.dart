@@ -19,6 +19,7 @@ class TaskService {
   Future<void> initialize() async {
     if (_loaded) return;
     final prefs = await SharedPreferences.getInstance();
+    //await prefs.remove('tasks'); Resets app to have no tasks
     final String? data = prefs.getString('tasks');
     if (data != null) {
       final List decoded = jsonDecode(data);
@@ -171,6 +172,15 @@ class TaskService {
   }
 
   TaskSchedule? calculateProblemSetSchedule(Task task) {
+    /* for testing purposes
+    print('Calculating schedule for: ${task.title}');
+    print('taskType: ${task.taskType}');
+    print('questionCount: ${task.questionCount}');
+    print('dueDate: ${task.dueDate}');
+    print('taskDifficulty: "${task.taskDifficulty}"');  // ← check for empty string
+    print('isCompleted: ${task.isCompleted}');
+    */
+
     // Only works for Problem Set tasks with questionCount and dueDate
     if (task.taskType != 'Problem Set') return null;
     if (task.questionCount == null || task.dueDate == null) return null;
