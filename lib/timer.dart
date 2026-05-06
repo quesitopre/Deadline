@@ -306,9 +306,9 @@ void _notifyTimerState(bool running){
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: _currentColor.withOpacity(0.08),
+                color: _currentColor.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: _currentColor.withOpacity(0.2)),
+                border: Border.all(color: _currentColor.withValues(alpha: 0.2)),
               ),
               child: Row(
                 children: [

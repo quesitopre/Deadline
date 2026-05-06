@@ -106,12 +106,12 @@ class _DashboardPageState extends State<Dashboard> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.2),
+            color: Colors.grey.withValues(alpha: 0.2),
             blurRadius: 6,
             offset: Offset(0, 3),
           ),
         ],
-        border: Border.all(color: color.withOpacity(0.4)),
+        border: Border.all(color: color.withValues(alpha:0.4)),
       ),
       child: Padding(
         padding: const EdgeInsets.all(20.0),
