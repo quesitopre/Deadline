@@ -45,12 +45,6 @@ class _TaskPageState extends State<TaskPage> {
 
   void _refreshTasks() { //schedule calc extracted to avoid repetition
     _tasks = _taskService.getTasksSortedByDueDate();
-    _schedules = {
-      for (var task in _tasks)
-        task.id: task.taskType == 'Problem Set'
-            ? _taskService.calculateProblemSetSchedule(task)
-            : null
-    };
   }
   
   List<Task> get _filteredTasks {
@@ -172,7 +166,7 @@ class _TaskPageState extends State<TaskPage> {
       },
       child: Card(
         margin: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        child: ExpansionTile(
+        child: ListTile(
           enabled: schedule != null,
           leading: Checkbox(
             value: task.isCompleted,
@@ -186,63 +180,17 @@ class _TaskPageState extends State<TaskPage> {
                   : TextDecoration.none,
             ),
           ),
-          subtitle: _buildTaskSubtitle(task, schedule),
+          subtitle: _buildTaskSubtitle(task),
           trailing: IconButton(                    // ← only ONE trailing here
             icon: const Icon(Icons.delete, color: Colors.red),
             onPressed: () => _deleteTask(task.id),
-          ),
-          children: [                              // ← children belongs to ExpansionTile
-            if (schedule != null)
-              _buildScheduleDetails(schedule),
-          ],                                       // ← closes ExpansionTile children
+          ),                                      // ← closes ExpansionTile children
         ), 
       ),                                        // ← closes ExpansionTile
     ); 
   }
 
-  Widget _buildScheduleDetails(TaskSchedule schedule) {
-    return Container(
-      padding: EdgeInsets.all(16),
-      color: Colors.blue[50],
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            '📅 Recommended Study Schedule',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-          ),
-          const SizedBox(height: 8),
-          Text('Total problems: ${schedule.totalProblems}'),
-          Text('Days to complete: ${schedule.daysToComplete}'),
-          Text('Days remaining: ${schedule.remainingDays}'),
-          const Divider(),
-          Row(
-            children: [
-              const Icon(Icons.today, size: 16, color: Colors.blue),
-              const SizedBox(width: 8),
-              Text(
-                'Day 1: ${schedule.problemsFirstDay} problems',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Row(
-            children: [
-              const Icon(Icons.calendar_month, size: 16, color: Colors.blue),
-              const SizedBox(width: 8),
-              Text(
-                'Days 2-${schedule.daysToComplete}: ${schedule.problemsRestOfDays} problems/day',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTaskSubtitle(Task task, TaskSchedule? schedule) {
+  Widget _buildTaskSubtitle(Task task) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -269,11 +217,6 @@ class _TaskPageState extends State<TaskPage> {
           Text('Pages: ${task.pageRanges!.map((r) => '${r['start']}-${r['end']}').join(', ')}'),
         if (task.questionCount != null)
           Text('Questions: ${task.questionCount}'),
-        if (schedule != null)
-          Text(
-            'Tap to see study schedule',
-            style: TextStyle(color: Colors.blue, fontSize: 12),
-          ),
       ],
     );
   }

@@ -26,7 +26,7 @@ class IndividualTaskPage extends StatelessWidget {
           children: [
             _buildInfoCard(context),
             SizedBox(height: 16),
-            if (schedule != null) _buildScheduleCard(),
+            if (schedule != null) _buildScheduleCard(schedule!),
           ],
         ),
       ),
@@ -138,7 +138,7 @@ class IndividualTaskPage extends StatelessWidget {
     );
   }
 
-  Widget _buildScheduleCard() {
+  Widget _buildScheduleCard(TaskSchedule schedule) {  // ← takes schedule as parameter
     return Card(
       color: Colors.blue[50],
       child: Padding(
@@ -151,18 +151,18 @@ class IndividualTaskPage extends StatelessWidget {
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             Divider(),
-            _buildScheduleRow(Icons.calculate, 'Total Problems', '${schedule!.totalProblems}'),
+            _buildScheduleRow(Icons.calculate, 'Total Problems', '${schedule.totalProblems}'),
             SizedBox(height: 8),
-            _buildScheduleRow(Icons.today, 'Days to Complete', '${schedule!.daysToComplete}'),
+            _buildScheduleRow(Icons.today, 'Days to Complete', '${schedule.daysToComplete}'),
             SizedBox(height: 8),
-            _buildScheduleRow(Icons.hourglass_bottom, 'Days Remaining', '${schedule!.remainingDays}'),
+            _buildScheduleRow(Icons.hourglass_bottom, 'Days Remaining', '${schedule.remainingDays}'),
             Divider(),
             Row(
               children: [
                 Icon(Icons.looks_one, color: Colors.blue),
                 SizedBox(width: 8),
                 Text(
-                  'Day 1: ${schedule!.problemsFirstDay} problems',
+                  'Day 1: ${schedule.problemsFirstDay} problems',
                   style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                 ),
               ],
@@ -173,7 +173,7 @@ class IndividualTaskPage extends StatelessWidget {
                 Icon(Icons.calendar_month, color: Colors.blue),
                 SizedBox(width: 8),
                 Text(
-                  'Days 2-${schedule!.daysToComplete}: ${schedule!.problemsRestOfDays} problems/day',
+                  'Days 2-${schedule.daysToComplete}: ${schedule.problemsRestOfDays} problems/day',
                   style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                 ),
               ],
