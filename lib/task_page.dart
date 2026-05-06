@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'services/task_service.dart';
 import 'models/task.dart';
 import 'package:deadline_app/models/task_schedule.dart';
+import 'package:deadline_app/screens/individual_task_page.dart';
 
 class TaskPage extends StatefulWidget {
   const TaskPage({super.key});
@@ -14,6 +15,7 @@ class _TaskPageState extends State<TaskPage> {
   final TaskService _taskService = TaskService();
   List<Task> _tasks = [];
   String? _activeFilter; // null means show all tasks
+  Map<String, TaskSchedule?> _schedules = {};
 
   @override
   void initState() {
@@ -23,30 +25,32 @@ class _TaskPageState extends State<TaskPage> {
 
   void _loadTasks() async {
     await _taskService.initialize(); // ← initialize first
-    setState(() {
-      _tasks = _taskService.getTasksSortedByDueDate();
-    });
+    setState(() => _refreshTasks());
   }
 
   void _addTask(String title, DateTime? dueDate, String taskType, List<Map<String, int>>? pageRanges, int? questionCount, String taskDifficulty) async {
     await _taskService.addTask(title, '', dueDate: dueDate, taskType: taskType, pageRanges: pageRanges, questionCount: questionCount, taskDifficulty: taskDifficulty,);
-    setState(() {
-      _tasks = _taskService.getTasksSortedByDueDate();
-    });
+    setState(() => _refreshTasks());
   }
 
   void _toggleTask(String id) async {
     await _taskService.toggleTask(id);
-    setState(() {
-      _tasks = _taskService.getTasksSortedByDueDate();
-    });
+    setState(() => _refreshTasks());
   }
 
   void _deleteTask(String id) async {
     await _taskService.deleteTask(id);
-    setState(() {
-      _tasks = _taskService.getTasksSortedByDueDate();
-    });
+    setState(() => _refreshTasks());
+  }
+
+  void _refreshTasks() { //schedule calc extracted to avoid repetition
+    _tasks = _taskService.getTasksSortedByDueDate();
+    _schedules = {
+      for (var task in _tasks)
+        task.id: task.taskType == 'Problem Set'
+            ? _taskService.calculateProblemSetSchedule(task)
+            : null
+    };
   }
   
   List<Task> get _filteredTasks {
@@ -152,35 +156,46 @@ class _TaskPageState extends State<TaskPage> {
   }
 
   Widget _buildTaskTile(Task task) {
-    final schedule = task.taskType == 'Problem Set'
-        ? _taskService.calculateProblemSetSchedule(task)
-        : null;
-    return Card(
-      margin: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      child: ExpansionTile(
-        enabled: schedule != null,
-        leading: Checkbox(
-          value: task.isCompleted,
-          onChanged: (_) => _toggleTask(task.id),
-        ),
-        title: Text(
-          task.title,
-          style: TextStyle(
-            decoration: task.isCompleted
-                ? TextDecoration.lineThrough
-                : TextDecoration.none,
+    final schedule = _schedules[task.id];
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => IndividualTaskPage(
+              task: task,
+              schedule: schedule,
+            ),
           ),
-        ),
-        subtitle: _buildTaskSubtitle(task, schedule),
-        trailing: IconButton(                    // ← only ONE trailing here
-          icon: const Icon(Icons.delete, color: Colors.red),
-          onPressed: () => _deleteTask(task.id),
-        ),
-        children: [                              // ← children belongs to ExpansionTile
-          if (schedule != null)
-            _buildScheduleDetails(schedule),
-        ],                                       // ← closes ExpansionTile children
-      ),                                         // ← closes ExpansionTile
+        );
+      },
+      child: Card(
+        margin: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        child: ExpansionTile(
+          enabled: schedule != null,
+          leading: Checkbox(
+            value: task.isCompleted,
+            onChanged: (_) => _toggleTask(task.id),
+          ),
+          title: Text(
+            task.title,
+            style: TextStyle(
+              decoration: task.isCompleted
+                  ? TextDecoration.lineThrough
+                  : TextDecoration.none,
+            ),
+          ),
+          subtitle: _buildTaskSubtitle(task, schedule),
+          trailing: IconButton(                    // ← only ONE trailing here
+            icon: const Icon(Icons.delete, color: Colors.red),
+            onPressed: () => _deleteTask(task.id),
+          ),
+          children: [                              // ← children belongs to ExpansionTile
+            if (schedule != null)
+              _buildScheduleDetails(schedule),
+          ],                                       // ← closes ExpansionTile children
+        ), 
+      ),                                        // ← closes ExpansionTile
     ); 
   }
 
