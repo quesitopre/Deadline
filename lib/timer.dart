@@ -1,4 +1,4 @@
-
+import 'package:flutter/services.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 
@@ -11,7 +11,10 @@ class TimerPage extends StatefulWidget {
   State<TimerPage> createState() => _TimerPageState();
 }
 
-class _TimerPageState extends State<TimerPage> {
+class _TimerPageState extends State<TimerPage>  with AutomaticKeepAliveClientMixin{
+  @override
+  bool get wantKeepAlive => true;
+
   Timer? _timer;
   bool _isRunning = false;
 
@@ -64,6 +67,7 @@ class _TimerPageState extends State<TimerPage> {
   void startTimer() {
     if (_isRunning) return;
     setState(() => _isRunning = true);
+    _notifyTimerState(true);
 
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (_seconds == 0) {
@@ -92,6 +96,7 @@ class _TimerPageState extends State<TimerPage> {
   void stopTimer() {
     _timer?.cancel();
     setState(() => _isRunning = false);
+    _notifyTimerState(false);
   }
 
   void resetTimer() {
@@ -100,6 +105,7 @@ class _TimerPageState extends State<TimerPage> {
       _seconds = _durations[_currentMode]!;
       _isRunning = false;
     });
+    _notifyTimerState(false);
   }
 
   void resetAll() {
@@ -110,7 +116,13 @@ class _TimerPageState extends State<TimerPage> {
       _isRunning = false;
       _pomodoroCount = 0;
     });
+    _notifyTimerState(false);
   }
+
+void _notifyTimerState(bool running){
+  const MethodChannel('deadline_app/blocker')
+    .invokeMethod('updateTimerState', {'running': running});
+}
 
   String formatTime(int seconds) {
     final m = (seconds ~/ 60).toString().padLeft(2, '0');
@@ -133,6 +145,7 @@ class _TimerPageState extends State<TimerPage> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final config = _modeConfig[_currentMode]!;
 
     return SingleChildScrollView(
@@ -293,9 +306,9 @@ class _TimerPageState extends State<TimerPage> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: _currentColor.withOpacity(0.08),
+                color: _currentColor.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: _currentColor.withOpacity(0.2)),
+                border: Border.all(color: _currentColor.withValues(alpha: 0.2)),
               ),
               child: Row(
                 children: [
