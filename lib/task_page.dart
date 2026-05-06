@@ -63,8 +63,8 @@ class _TaskPageState extends State<TaskPage> {
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
           child: Row(
             children: [
-              Text('Filter: ', style: TextStyle(fontWeight: FontWeight.bold)),
-              SizedBox(width: 8),
+              const Text('Filter: ', style: TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(width: 8),
               // All button
               Padding(
                 padding: const EdgeInsets.only(right: 8.0),
@@ -133,8 +133,8 @@ class _TaskPageState extends State<TaskPage> {
           padding: const EdgeInsets.symmetric(horizontal: 16.0),
           child: ElevatedButton.icon(
             onPressed: () => _showAddTaskDialog(context),
-            icon: Icon(Icons.add),
-            label: Text('Add Task'),
+            icon: const Icon(Icons.add),
+            label: const Text('Add Task'),
           ),
         ),
         // Task list
@@ -143,109 +143,121 @@ class _TaskPageState extends State<TaskPage> {
             itemCount: _filteredTasks.length,
             itemBuilder: (context, index) {
               final task = _filteredTasks[index];
-              final schedule = task.taskType == 'Problem Set'
-                  ? _taskService.calculateProblemSetSchedule(task)
-                  : null;
-              return Card(
-                margin: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                child: ExpansionTile(
-                  enabled: schedule != null,
-                  leading: Checkbox(
-                    value: task.isCompleted,
-                    onChanged: (_) => _toggleTask(task.id),
-                  ),
-                  title: Text(
-                    task.title,
-                    style: TextStyle(
-                      decoration: task.isCompleted
-                          ? TextDecoration.lineThrough
-                          : TextDecoration.none,
-                    ),
-                  ),
-                  subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Type: ${task.taskType}'),
-                      Row(
-                        children: [
-                          Text('Difficulty: '),
-                          Text(
-                            task.taskDifficulty,
-                            style: TextStyle(
-                              color: task.taskDifficulty == 'Easy'
-                                  ? Colors.green
-                                  : task.taskDifficulty == 'Medium'
-                                      ? Colors.orange
-                                      : Colors.red,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                      if (task.dueDate != null)
-                        Text('Due: ${task.dueDate!.month}/${task.dueDate!.day}/${task.dueDate!.year}'),
-                      if (task.pageRanges != null && task.pageRanges!.isNotEmpty)
-                        Text('Pages: ${task.pageRanges!.map((r) => '${r['start']}-${r['end']}').join(', ')}'),
-                      if (task.questionCount != null)
-                        Text('Questions: ${task.questionCount}'),
-                      if (schedule != null)
-                        Text(
-                          'Tap to see study schedule',
-                          style: TextStyle(color: Colors.blue, fontSize: 12),
-                        ),
-                    ],
-                  ),
-                  trailing: IconButton(                    // ← only ONE trailing here
-                    icon: Icon(Icons.delete, color: Colors.red),
-                    onPressed: () => _deleteTask(task.id),
-                  ),
-                  children: [                              // ← children belongs to ExpansionTile
-                    if (schedule != null)
-                      Container(
-                        padding: EdgeInsets.all(16),
-                        color: Colors.blue[50],
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              '📅 Recommended Study Schedule',
-                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                            ),
-                            SizedBox(height: 8),
-                            Text('Total problems: ${schedule.totalProblems}'),
-                            Text('Days to complete: ${schedule.daysToComplete}'),
-                            Text('Days remaining: ${schedule.remainingDays}'),
-                            Divider(),
-                            Row(
-                              children: [
-                                Icon(Icons.today, size: 16, color: Colors.blue),
-                                SizedBox(width: 8),
-                                Text(
-                                  'Day 1: ${schedule.problemsFirstDay} problems',
-                                  style: TextStyle(fontWeight: FontWeight.bold),
-                                ),
-                              ],
-                            ),
-                            SizedBox(height: 4),
-                            Row(
-                              children: [
-                                Icon(Icons.calendar_month, size: 16, color: Colors.blue),
-                                SizedBox(width: 8),
-                                Text(
-                                  'Days 2-${schedule.daysToComplete}: ${schedule.problemsRestOfDays} problems/day',
-                                  style: TextStyle(fontWeight: FontWeight.bold),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                  ],                                       // ← closes ExpansionTile children
-                ),                                         // ← closes ExpansionTile
-              );   
+              return _buildTaskTile(task);
             },
           ),
         ),
+      ],
+    );
+  }
+
+  Widget _buildTaskTile(Task task) {
+    final schedule = task.taskType == 'Problem Set'
+        ? _taskService.calculateProblemSetSchedule(task)
+        : null;
+    return Card(
+      margin: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      child: ExpansionTile(
+        enabled: schedule != null,
+        leading: Checkbox(
+          value: task.isCompleted,
+          onChanged: (_) => _toggleTask(task.id),
+        ),
+        title: Text(
+          task.title,
+          style: TextStyle(
+            decoration: task.isCompleted
+                ? TextDecoration.lineThrough
+                : TextDecoration.none,
+          ),
+        ),
+        subtitle: _buildTaskSubtitle(task, schedule),
+        trailing: IconButton(                    // ← only ONE trailing here
+          icon: const Icon(Icons.delete, color: Colors.red),
+          onPressed: () => _deleteTask(task.id),
+        ),
+        children: [                              // ← children belongs to ExpansionTile
+          if (schedule != null)
+            _buildScheduleDetails(schedule),
+        ],                                       // ← closes ExpansionTile children
+      ),                                         // ← closes ExpansionTile
+    ); 
+  }
+
+  Widget _buildScheduleDetails(TaskSchedule schedule) {
+    return Container(
+      padding: EdgeInsets.all(16),
+      color: Colors.blue[50],
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '📅 Recommended Study Schedule',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+          ),
+          const SizedBox(height: 8),
+          Text('Total problems: ${schedule.totalProblems}'),
+          Text('Days to complete: ${schedule.daysToComplete}'),
+          Text('Days remaining: ${schedule.remainingDays}'),
+          const Divider(),
+          Row(
+            children: [
+              const Icon(Icons.today, size: 16, color: Colors.blue),
+              const SizedBox(width: 8),
+              Text(
+                'Day 1: ${schedule.problemsFirstDay} problems',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Row(
+            children: [
+              const Icon(Icons.calendar_month, size: 16, color: Colors.blue),
+              const SizedBox(width: 8),
+              Text(
+                'Days 2-${schedule.daysToComplete}: ${schedule.problemsRestOfDays} problems/day',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTaskSubtitle(Task task, TaskSchedule? schedule) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Type: ${task.taskType}'),
+        Row(
+          children: [
+            const Text('Difficulty: '),
+            Text(
+              task.taskDifficulty,
+              style: TextStyle(
+                color: task.taskDifficulty == 'Easy'
+                    ? Colors.green
+                    : task.taskDifficulty == 'Medium'
+                        ? Colors.orange
+                        : Colors.red,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+        if (task.dueDate != null)
+          Text('Due: ${task.dueDate!.month}/${task.dueDate!.day}/${task.dueDate!.year}'),
+        if (task.pageRanges != null && task.pageRanges!.isNotEmpty)
+          Text('Pages: ${task.pageRanges!.map((r) => '${r['start']}-${r['end']}').join(', ')}'),
+        if (task.questionCount != null)
+          Text('Questions: ${task.questionCount}'),
+        if (schedule != null)
+          Text(
+            'Tap to see study schedule',
+            style: TextStyle(color: Colors.blue, fontSize: 12),
+          ),
       ],
     );
   }
@@ -281,7 +293,7 @@ class _TaskPageState extends State<TaskPage> {
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          title: Text('New Task'),
+          title: const Text('New Task'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -293,13 +305,13 @@ class _TaskPageState extends State<TaskPage> {
                   labelText: 'Task Name',
                 ),
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
               // 2. Task Difficulty buttons
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text('Difficulty', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
-                  SizedBox(height: 8),
+                  const SizedBox(height: 8),
                   Row(
                     children: ['Easy', 'Medium', 'Hard'].map((difficulty) {
                       final isSelected = selectedDifficulty == difficulty;
@@ -337,7 +349,7 @@ class _TaskPageState extends State<TaskPage> {
                   ),
                 ],
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
               // 3. Due date picker
               Row(
                 children: [
@@ -362,12 +374,12 @@ class _TaskPageState extends State<TaskPage> {
                         });
                       }
                     },
-                    icon: Icon(Icons.calendar_today),
-                    label: Text('Pick Date'),
+                    icon: const Icon(Icons.calendar_today),
+                    label: const Text('Pick Date'),
                   ),
                 ],
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
 
               // 4. Task type dropdown
               DropdownButtonFormField<String>(
@@ -390,7 +402,7 @@ class _TaskPageState extends State<TaskPage> {
 
               // Page ranges - only shows for Reading
               if (selectedType == 'Reading') ...[
-                SizedBox(height: 16),
+                const SizedBox(height: 16),
                 Row(
                   children: [
                     Text('Page Ranges', style: TextStyle(fontWeight: FontWeight.bold)),
@@ -405,7 +417,7 @@ class _TaskPageState extends State<TaskPage> {
                           });
                         });
                       },
-                      icon: Icon(Icons.add),
+                      icon: const Icon(Icons.add),
                       label: Text('Add Range'),
                     ),
                   ],
@@ -445,7 +457,7 @@ class _TaskPageState extends State<TaskPage> {
                             ),
                             if (pageRanges.length > 1)
                               IconButton(
-                                icon: Icon(Icons.remove_circle, color: Colors.red),
+                                icon: const Icon(Icons.remove_circle, color: Colors.red),
                                 onPressed: () {
                                   setDialogState(() {
                                     pageRanges.removeAt(index);
@@ -461,7 +473,7 @@ class _TaskPageState extends State<TaskPage> {
               ],
               // Question count - only show for Problem Set
               if (selectedType == 'Problem Set') ...[
-                SizedBox(height: 16),
+                const SizedBox(height: 16),
                 TextField(
                   controller: questionCountController,
                   keyboardType: TextInputType.number,
@@ -476,7 +488,7 @@ class _TaskPageState extends State<TaskPage> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: Text('Cancel'),
+              child: const Text('Cancel'),
             ),
             TextButton(
               onPressed: () {
@@ -506,7 +518,7 @@ class _TaskPageState extends State<TaskPage> {
                   Navigator.pop(context);
                 }
               },
-              child: Text('Add'),
+              child: const Text('Add'),
             ),
           ],
         ),
