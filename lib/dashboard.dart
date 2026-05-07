@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'services/task_service.dart';
 import 'models/task.dart';
+import 'package:deadline_app/widgets/workload_graph.dart';
 
 class Dashboard extends StatefulWidget {
   const Dashboard({super.key});
@@ -47,8 +48,9 @@ class _DashboardPageState extends State<Dashboard> {
       (t.dueDate!.year == DateTime.now().year &&
       t.dueDate!.month == DateTime.now().month &&
       t.dueDate!.day == DateTime.now().day))).toList();
+    final schedule = _taskService.calculateThreeWeekSchedule();
 
-    return Padding(
+    return SingleChildScrollView(
       padding: const EdgeInsets.all(16.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -61,6 +63,7 @@ class _DashboardPageState extends State<Dashboard> {
           GridView.count(
             crossAxisCount: 2,
             shrinkWrap: true,
+            physics: NeverScrollableScrollPhysics(),
             crossAxisSpacing: 16,
             mainAxisSpacing: 16,
             children: [
@@ -84,6 +87,14 @@ class _DashboardPageState extends State<Dashboard> {
                 icon: Icons.warning_amber,
               ),
             ],
+          ),
+          SizedBox(height: 24),
+          // Workload graph
+          Card(
+            child: Padding(
+              padding: EdgeInsets.all(16),
+              child: WorkloadGraph(schedule: schedule), // ← new
+            ),
           ),
         ],
       ),

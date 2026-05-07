@@ -1,10 +1,12 @@
 class TaskSchedule {
-  final int total;                  // ← renamed from totalProblems
+  final int total;                  
   final int daysToComplete;
-  final int firstDayCount;          // ← renamed from problemsFirstDay
-  final int remainingDaysCount;     // ← renamed from problemsRestOfDays
+  final int firstDayCount;          
+  final int remainingDaysCount;     
   final int remainingDays;
-  final String unit;                // ← new: 'problems' or 'pages'
+  final String unit;
+  final String taskTitle;
+  final String difficulty;                 
 
   TaskSchedule({
     required this.total,
@@ -12,6 +14,8 @@ class TaskSchedule {
     required this.firstDayCount,
     required this.remainingDaysCount,
     required this.remainingDays,
-    required this.unit,             // ← new
+    required this.unit,
+    required this.taskTitle,
+    required this.difficulty,            
   });
 }

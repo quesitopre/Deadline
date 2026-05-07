@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/task.dart';
 import '../models/task_schedule.dart';
+import '../models/day_schedule.dart';
 
 class TaskService {
   // Singleton pattern - only one instance ever exists
@@ -19,7 +20,7 @@ class TaskService {
   Future<void> initialize() async {
     if (_loaded) return;
     final prefs = await SharedPreferences.getInstance();
-    //await prefs.remove('tasks'); // Resets app to have no tasks, use if tasks corrupted
+    await prefs.remove('tasks'); // Resets app to have no tasks, use if tasks corrupted
     final String? data = prefs.getString('tasks');
     if (data != null) {
       final List decoded = jsonDecode(data);
@@ -219,7 +220,133 @@ class TaskService {
       firstDayCount: firstDay,
       remainingDaysCount: perDayFloor,
       remainingDays: daysUntilDue,
-      unit: task.taskType == 'Problem Set' ? 'problems' : 'pages', // ← new
+      unit: task.taskType == 'Problem Set' ? 'problems' : 'pages',
+      taskTitle: task.title,       // ← new
+      difficulty: task.taskDifficulty, // ← new
     );
+  }
+
+  // For bar graph
+  List<DayWorkload> calculateThreeWeekSchedule() {
+    const int maxMinutesPerDay = 480;
+    const int totalDays = 21;
+    const int minutesPerUnit = 15;
+
+    // Initialize 21 days
+    final List<DayWorkload> schedule =
+        List.generate(totalDays, (i) => DayWorkload(dayIndex: i));
+
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    // Get valid tasks - no completed, no overdue, only Problem Set and Reading
+    final validTasks = _tasks.where((t) {
+      if (t.isCompleted) return false;
+      if (t.taskType != 'Problem Set' && t.taskType != 'Reading') return false;
+      if (t.dueDate == null) return false;
+      final due = DateTime(t.dueDate!.year, t.dueDate!.month, t.dueDate!.day);
+      if (due.isBefore(today)) return false;
+      if (t.taskType == 'Problem Set' && t.questionCount == null) return false;
+      if (t.taskType == 'Reading' &&
+          (t.pageRanges == null || t.pageRanges!.isEmpty)) return false;
+      return true;
+    }).toList();
+
+    // Sort by priority: sooner due date first, then harder difficulty
+    validTasks.sort((a, b) {
+      final dueCmp = a.dueDate!.compareTo(b.dueDate!);
+      if (dueCmp != 0) return dueCmp;
+      // Same due date → harder difficulty wins (Hard=0, Medium=1, Easy=2)
+      return _difficultyRank(a.taskDifficulty)
+          .compareTo(_difficultyRank(b.taskDifficulty));
+    });
+
+    // Schedule each task
+    for (final task in validTasks) {
+      final taskSchedule = calculateTaskSchedule(task);
+      if (taskSchedule == null) continue;
+
+      final int firstDayMinutes = taskSchedule.firstDayCount * minutesPerUnit;
+      final int restDayMinutes = taskSchedule.remainingDaysCount * minutesPerUnit;
+      final int workDays = taskSchedule.daysToComplete;
+
+      // Find first available day with space
+      int startDay = 0;
+      while (startDay < totalDays &&
+          schedule[startDay].totalMinutes >= maxMinutesPerDay) {
+        startDay++;
+      }
+      if (startDay >= totalDays) continue; // no space at all
+
+      // Place first day minutes with Option B overflow
+      _placeMinutes(
+        schedule: schedule,
+        startDay: startDay,
+        minutes: firstDayMinutes,
+        taskTitle: task.title,
+        difficulty: task.taskDifficulty,
+        maxMinutes: maxMinutesPerDay,
+        totalDays: totalDays,
+      );
+
+      // Place remaining days
+      for (int i = 1; i < workDays; i++) {
+        final targetDay = startDay + i;
+        if (targetDay >= totalDays) break;
+        _placeMinutes(
+          schedule: schedule,
+          startDay: targetDay,
+          minutes: restDayMinutes,
+          taskTitle: task.title,
+          difficulty: task.taskDifficulty,
+          maxMinutes: maxMinutesPerDay,
+          totalDays: totalDays,
+        );
+      }
+    }
+
+    return schedule;
+  }
+
+  // Places minutes with Option B overflow (fills current day, spills rest)
+  void _placeMinutes({
+    required List<DayWorkload> schedule,
+    required int startDay,
+    required int minutes,
+    required String taskTitle,
+    required String difficulty,
+    required int maxMinutes,
+    required int totalDays,
+  }) {
+    int remainingMinutes = minutes;
+    int currentDay = startDay;
+
+    while (remainingMinutes > 0 && currentDay < totalDays) {
+      final available = maxMinutes - schedule[currentDay].totalMinutes;
+
+      if (available <= 0) {
+        currentDay++;
+        continue;
+      }
+
+      final toPlace = remainingMinutes <= available ? remainingMinutes : available;
+
+      schedule[currentDay].totalMinutes += toPlace;
+      schedule[currentDay].tasks.add(TaskMinutes(
+        taskTitle: taskTitle,
+        minutes: toPlace,
+        difficulty: difficulty,
+      ));
+
+      remainingMinutes -= toPlace;
+      if (remainingMinutes > 0) currentDay++;
+    }
+  }
+
+  // Hard = 0 (highest priority), Medium = 1, Easy = 2 (lowest priority)
+  int _difficultyRank(String difficulty) {
+    if (difficulty == 'Hard') return 0;
+    if (difficulty == 'Medium') return 1;
+    return 2;
   }
 }
