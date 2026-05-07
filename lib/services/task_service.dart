@@ -20,7 +20,7 @@ class TaskService {
   Future<void> initialize() async {
     if (_loaded) return;
     final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('tasks'); // Resets app to have no tasks, use if tasks corrupted
+    //await prefs.remove('tasks'); // Resets app to have no tasks, use if tasks corrupted
     final String? data = prefs.getString('tasks');
     if (data != null) {
       final List decoded = jsonDecode(data);
@@ -228,7 +228,8 @@ class TaskService {
 
   // For bar graph
   List<DayWorkload> calculateThreeWeekSchedule() {
-    const int maxMinutesPerDay = 480;
+    const int softCapMinutes = 150;     // ← daily target
+    const int hardCapMinutes = 480;     // ← 8 hour max
     const int totalDays = 21;
     const int minutesPerUnit = 15;
 
@@ -256,40 +257,106 @@ class TaskService {
     validTasks.sort((a, b) {
       final dueCmp = a.dueDate!.compareTo(b.dueDate!);
       if (dueCmp != 0) return dueCmp;
-      // Same due date → harder difficulty wins (Hard=0, Medium=1, Easy=2)
       return _difficultyRank(a.taskDifficulty)
           .compareTo(_difficultyRank(b.taskDifficulty));
     });
 
-    // Schedule each task
+    // First pass: schedule within soft cap (150 min)
     for (final task in validTasks) {
       final taskSchedule = calculateTaskSchedule(task);
       if (taskSchedule == null) continue;
+
+      final due = DateTime(task.dueDate!.year, task.dueDate!.month, task.dueDate!.day);
+      final daysUntilDue = due.difference(today).inDays.clamp(0, totalDays);
 
       final int firstDayMinutes = taskSchedule.firstDayCount * minutesPerUnit;
       final int restDayMinutes = taskSchedule.remainingDaysCount * minutesPerUnit;
       final int workDays = taskSchedule.daysToComplete;
 
-      // Find first available day with space
+      // Find first day within soft cap before due date
       int startDay = 0;
-      while (startDay < totalDays &&
-          schedule[startDay].totalMinutes >= maxMinutesPerDay) {
-        startDay++;
+      bool fitsInSoftCap = false;
+      for (int d = 0; d < daysUntilDue && d < totalDays; d++) {
+        if (schedule[d].totalMinutes < softCapMinutes) {
+          startDay = d;
+          fitsInSoftCap = true;
+          break;
+        }
       }
-      if (startDay >= totalDays) continue; // no space at all
 
-      // Place first day minutes with Option B overflow
+      if (!fitsInSoftCap) {
+        // Mark task for second pass (hard cap)
+        task.needsHardCap = true;  // ← we'll add this field
+        continue;
+      }
+
+      // Place within soft cap
       _placeMinutes(
         schedule: schedule,
         startDay: startDay,
         minutes: firstDayMinutes,
         taskTitle: task.title,
         difficulty: task.taskDifficulty,
-        maxMinutes: maxMinutesPerDay,
-        totalDays: totalDays,
+        cap: softCapMinutes,
+        totalDays: daysUntilDue.clamp(0, totalDays),
       );
 
       // Place remaining days
+      for (int i = 1; i < workDays; i++) {
+        final targetDay = startDay + i;
+        if (targetDay >= totalDays || targetDay >= daysUntilDue) break;
+        _placeMinutes(
+          schedule: schedule,
+          startDay: targetDay,
+          minutes: restDayMinutes,
+          taskTitle: task.title,
+          difficulty: task.taskDifficulty,
+          cap: softCapMinutes,
+          totalDays: daysUntilDue.clamp(0, totalDays),
+        );
+      }
+    }
+
+    // Update soft cap flags
+    for (final day in schedule) {
+      if (day.totalMinutes >= softCapMinutes) {
+        day.isDailyTargetReached = true;
+      }
+    }
+
+    // Second pass: tasks that didn't fit in soft cap now use hard cap
+    for (final task in validTasks) {
+      if (!task.needsHardCap) continue;
+
+      final taskSchedule = calculateTaskSchedule(task);
+      if (taskSchedule == null) continue;
+
+      final due = DateTime(task.dueDate!.year, task.dueDate!.month, task.dueDate!.day);
+      final daysUntilDue = due.difference(today).inDays.clamp(0, totalDays);
+
+      final int firstDayMinutes = taskSchedule.firstDayCount * minutesPerUnit;
+      final int restDayMinutes = taskSchedule.remainingDaysCount * minutesPerUnit;
+      final int workDays = taskSchedule.daysToComplete;
+
+      // Find first available day within hard cap
+      int startDay = 0;
+      for (int d = 0; d < totalDays; d++) {
+        if (schedule[d].totalMinutes < hardCapMinutes) {
+          startDay = d;
+          break;
+        }
+      }
+
+      _placeMinutes(
+        schedule: schedule,
+        startDay: startDay,
+        minutes: firstDayMinutes,
+        taskTitle: task.title,
+        difficulty: task.taskDifficulty,
+        cap: hardCapMinutes,
+        totalDays: totalDays,
+      );
+
       for (int i = 1; i < workDays; i++) {
         final targetDay = startDay + i;
         if (targetDay >= totalDays) break;
@@ -299,9 +366,16 @@ class TaskService {
           minutes: restDayMinutes,
           taskTitle: task.title,
           difficulty: task.taskDifficulty,
-          maxMinutes: maxMinutesPerDay,
+          cap: hardCapMinutes,
           totalDays: totalDays,
         );
+      }
+    }
+
+    // Update hard cap flags
+    for (final day in schedule) {
+      if (day.totalMinutes >= hardCapMinutes) {
+        day.isOverflowed = true;
       }
     }
 
@@ -315,14 +389,14 @@ class TaskService {
     required int minutes,
     required String taskTitle,
     required String difficulty,
-    required int maxMinutes,
+    required int cap,           // ← now accepts either soft or hard cap
     required int totalDays,
   }) {
     int remainingMinutes = minutes;
     int currentDay = startDay;
 
     while (remainingMinutes > 0 && currentDay < totalDays) {
-      final available = maxMinutes - schedule[currentDay].totalMinutes;
+      final available = cap - schedule[currentDay].totalMinutes;
 
       if (available <= 0) {
         currentDay++;

@@ -4,11 +4,15 @@ class Task {
   String description;
   bool isCompleted;
   DateTime createdAt;
-  DateTime? dueDate;      // ← new
-  String taskType;        // ← new
-  List<Map<String, int>>? pageRanges;  // ← new
+  DateTime? dueDate;      
+  String taskType;        
+  List<Map<String, int>>? pageRanges;  
   int? questionCount;
   String taskDifficulty; 
+  
+  
+  // Add this as a runtime-only field (not saved to storage)
+  bool needsHardCap = false;
 
   Task({
     required this.id,
@@ -16,9 +20,9 @@ class Task {
     this.description = '',
     this.isCompleted = false,
     required this.createdAt,
-    this.dueDate,                  // ← new
-    this.taskType = 'Other',       // ← new
-    this.pageRanges,               // ← new
+    this.dueDate,                  
+    this.taskType = 'Other',       
+    this.pageRanges,              
     this.questionCount,  
     this.taskDifficulty = 'Easy',         
   });

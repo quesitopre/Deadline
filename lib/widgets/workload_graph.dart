@@ -59,9 +59,9 @@ class WorkloadGraph extends StatelessWidget {
   }
 
   Widget _buildDayBar(BuildContext context, DayWorkload day, int index) {
-    final bool isFull = day.totalMinutes >= maxMinutes;
-    final double fillRatio =
-        (day.totalMinutes / maxMinutes).clamp(0.0, 1.0);
+    final bool isHardCapped = day.isOverflowed;
+    final bool isSoftCapped = day.isDailyTargetReached && !isHardCapped;
+    final double fillRatio = (day.totalMinutes / 480).clamp(0.0, 1.0);
     final String label = index == 0 ? 'Today' : 'D${index + 1}';
 
     return GestureDetector(
@@ -72,12 +72,11 @@ class WorkloadGraph extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
-            // 8hrs+ label if full
-            if (isFull)
-              Text(
-                '8h+',
-                style: TextStyle(fontSize: 8, color: Colors.red),
-              ),
+           // Cap labels
+            if (isHardCapped) // 8hrs+ label if full
+              Text('8h+', style: TextStyle(fontSize: 8, color: Colors.red)),
+            if (isSoftCapped)
+              Text('2.5h+', style: TextStyle(fontSize: 8, color: Colors.orange)),
             // Bar
             Expanded(
               child: Align(

@@ -56,6 +56,10 @@ class _HomepageState extends State<Homepage> {
   void navigateBottomBar(int index) {
     setState(() {
       _selectedIndex = index;
+      // Rebuild dashboard every time Home tab is selected
+      if (index == 0) {
+        _pages[0] = Dashboard();
+      }
     });
   }
 
