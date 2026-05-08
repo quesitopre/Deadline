@@ -135,28 +135,28 @@ class _TaskPageState extends State<TaskPage> {
           ],
         ),
       ),
-        // Add task button
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-          child: ElevatedButton.icon(
-            onPressed: () => _showAddTaskDialog(context),
-            icon: const Icon(Icons.add),
-            label: const Text('Add Task'),
-          ),
+      // Add task button
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+        child: ElevatedButton.icon(
+          onPressed: () => _showAddTaskDialog(context),
+          icon: const Icon(Icons.add),
+          label: const Text('Add Task'),
         ),
-        // Task list
-        Expanded(
-          child: ListView.builder(
-            itemCount: _filteredTasks.length,
-            itemBuilder: (context, index) {
-              final task = _filteredTasks[index];
-              return _buildTaskTile(task);
-            },
-          ),
+      ),
+      // Task list
+      Expanded(
+        child: ListView.builder(
+          itemCount: _filteredTasks.length,
+          itemBuilder: (context, index) {
+            final task = _filteredTasks[index];
+            return _buildTaskTile(task);
+          },
         ),
-      ],
-    );
-  }
+      ),
+    ],
+  );
+}
 
   Widget _buildTaskTile(Task task) {
     final schedule = _schedules[task.id];
@@ -246,7 +246,6 @@ class _TaskPageState extends State<TaskPage> {
       'Problem Set',
       'Reading',
       'Essay',
-      'Writing',
       'Other'
     ];
 

@@ -14,6 +14,7 @@ class IndividualTaskPage extends StatelessWidget {
   });
 
   @override
+  
   Widget build(BuildContext context) {
     /* For testing purposes
     print('Task type: ${task.taskType}');
@@ -22,17 +23,21 @@ class IndividualTaskPage extends StatelessWidget {
     print('Due date: ${task.dueDate}');
     print('Schedule: $schedule'); 
     */
-    return Scaffold(
-      appBar: AppBar(
+    return Scaffold( //basic page structure
+      appBar: AppBar( // the top bar with task title
         title: Text(task.title),
       ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildInfoCard(context),
-            SizedBox(height: 16),
+      body: SingleChildScrollView( // makes page scrollable
+        padding: EdgeInsets.all(16), //adds spacing around content
+        child: Column( // stacks children vertically
+          crossAxisAlignment: CrossAxisAlignment.center, //CrossAxisAlignment.start,
+          children: [ // calls each build method to get widgets and stacks them vertically in order
+            _buildProgressCircle(context),         
+            const SizedBox(height: 16),
+            _buildPopUp(context),
+            const SizedBox(height: 16),
+            _buildInfoCard(context), // card 1: task details
+            const SizedBox(height: 16), // spacing between cards
             if (schedule != null) _buildScheduleCard(schedule!),
           ],
         ),
@@ -210,6 +215,51 @@ class IndividualTaskPage extends StatelessWidget {
         Text('$label: ', style: TextStyle(fontWeight: FontWeight.bold)),
         Text(value),
       ],
+    );
+  }
+
+  Widget _buildProgressCircle(BuildContext context){
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        SizedBox(
+          width: 220,
+          height: 220,
+          child: CircularProgressIndicator(
+            value: 0.7,
+            strokeWidth: 10,
+            backgroundColor: Colors.grey[200],
+          ),
+        ),
+        Text("70%", style: TextStyle(fontWeight: FontWeight.bold)),
+      ],
+    );
+  }
+
+  Widget _buildPopUp(BuildContext context){
+    return ElevatedButton(
+      onPressed: () {
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: Text("Update Progress"),
+              content: Text("This is a simple pop-up message."),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context), // Closes the dialog
+                  child: Text("Save"),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.pop(context), // Closes the dialog
+                  child: Text("Cancel"),
+                ),
+              ],
+            );
+          },
+        );
+      },
+      child: Text("Update Progress?"),
     );
   }
 }
