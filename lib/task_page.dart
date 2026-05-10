@@ -232,6 +232,7 @@ class _TaskPageState extends State<TaskPage> {
   void _showAddTaskDialog(BuildContext context) {
     final TextEditingController titleController = TextEditingController();
     DateTime? selectedDate;
+    String? pageRangeError;
     String selectedType = 'Other';
     String selectedDifficulty = 'Easy';
     List<Map<String, TextEditingController>> pageRanges = [
@@ -260,197 +261,207 @@ class _TaskPageState extends State<TaskPage> {
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
           title: const Text('New Task'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // 1. Task name input
-              TextField(
-                controller: titleController,
-                decoration: InputDecoration(
-                  hintText: 'Enter task title',
-                  labelText: 'Task Name',
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // 1. Task name input
+                TextField(
+                  controller: titleController,
+                  decoration: InputDecoration(
+                    hintText: 'Enter task title',
+                    labelText: 'Task Name',
+                  ),
                 ),
-              ),
-              const SizedBox(height: 16),
-              // 2. Task Difficulty buttons
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Difficulty', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: ['Easy', 'Medium', 'Hard'].map((difficulty) {
-                      final isSelected = selectedDifficulty == difficulty;
-                      final color = difficulty == 'Easy'
-                          ? Colors.green
-                          : difficulty == 'Medium'
-                              ? Colors.orange
-                              : Colors.red;
-                      return Padding(
-                        padding: const EdgeInsets.only(right: 8.0),
-                        child: GestureDetector(
-                          onTap: () {
-                            setDialogState(() {
-                              selectedDifficulty = difficulty;
-                            });
-                          },
-                          child: Container(
-                            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                            decoration: BoxDecoration(
-                              color: isSelected ? color : Colors.transparent,
-                              border: Border.all(color: color),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Text(
-                              difficulty,
-                              style: TextStyle(
-                                color: isSelected ? Colors.white : color,
-                                fontWeight: FontWeight.bold,
+                const SizedBox(height: 16),
+                // 2. Task Difficulty buttons
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Difficulty', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: ['Easy', 'Medium', 'Hard'].map((difficulty) {
+                        final isSelected = selectedDifficulty == difficulty;
+                        final color = difficulty == 'Easy'
+                            ? Colors.green
+                            : difficulty == 'Medium'
+                                ? Colors.orange
+                                : Colors.red;
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 8.0),
+                          child: GestureDetector(
+                            onTap: () {
+                              setDialogState(() {
+                                selectedDifficulty = difficulty;
+                              });
+                            },
+                            child: Container(
+                              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: isSelected ? color : Colors.transparent,
+                                border: Border.all(color: color),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Text(
+                                difficulty,
+                                style: TextStyle(
+                                  color: isSelected ? Colors.white : color,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              // 3. Due date picker
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      selectedDate == null
-                          ? 'No due date selected'
-                          : 'Due: ${selectedDate!.month}/${selectedDate!.day}/${selectedDate!.year}',
-                    ),
-                  ),
-                  TextButton.icon(
-                    onPressed: () async {
-                      final DateTime? picked = await showDatePicker(
-                        context: context,
-                        initialDate: DateTime.now(),
-                        firstDate: DateTime.now(),
-                        lastDate: DateTime(2100),
-                      );
-                      if (picked != null) {
-                        setDialogState(() {
-                          selectedDate = picked;
-                        });
-                      }
-                    },
-                    icon: const Icon(Icons.calendar_today),
-                    label: const Text('Pick Date'),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-
-              // 4. Task type dropdown
-              DropdownButtonFormField<String>(
-                initialValue: selectedType,
-                decoration: InputDecoration(
-                  labelText: 'Task Type',
-                ),
-                items: taskTypes.map((type) {
-                  return DropdownMenuItem(
-                    value: type,
-                    child: Text(type),
-                  );
-                }).toList(),
-                onChanged: (value) {
-                  setDialogState(() {
-                    selectedType = value!;
-                  });
-                },
-              ),
-
-              // Page ranges - only shows for Reading
-              if (selectedType == 'Reading') ...[
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Text('Page Ranges', style: TextStyle(fontWeight: FontWeight.bold)),
-                    Spacer(),
-                    TextButton.icon(
-                      onPressed: () {
-                        setDialogState(() {
-                          pageRanges.add({
-                            'start': TextEditingController(),
-                            'end': TextEditingController(),
-                            'source': TextEditingController(),
-                          });
-                        });
-                      },
-                      icon: const Icon(Icons.add),
-                      label: Text('Add Range'),
+                        );
+                      }).toList(),
                     ),
                   ],
                 ),
-                ...pageRanges.asMap().entries.map((entry) {
-                  int index = entry.key;
-                  Map<String, TextEditingController> range = entry.value;
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 8.0),
-                    child: Column(
-                      children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: TextField(
-                                controller: range['start'],
-                                keyboardType: TextInputType.number,
-                                decoration: InputDecoration(
-                                  labelText: 'From',
-                                  hintText: '1',
-                                ),
-                              ),
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                              child: Text('to'),
-                            ),
-                            Expanded(
-                              child: TextField(
-                                controller: range['end'],
-                                keyboardType: TextInputType.number,
-                                decoration: InputDecoration(
-                                  labelText: 'To',
-                                  hintText: '10',
-                                ),
-                              ),
-                            ),
-                            if (pageRanges.length > 1)
-                              IconButton(
-                                icon: const Icon(Icons.remove_circle, color: Colors.red),
-                                onPressed: () {
-                                  setDialogState(() {
-                                    pageRanges.removeAt(index);
-                                  });
-                                },
-                              ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  );
-                }
-              )
-           ],
-              // Question count - only show for Problem Set
-              if (selectedType == 'Problem Set') ...[
                 const SizedBox(height: 16),
-                TextField(
-                  controller: questionCountController,
-                  keyboardType: TextInputType.number,
-                  decoration: InputDecoration(
-                    labelText: 'Number of Questions',
-                    hintText: 'e.g. 20',
-                  ),
+                // 3. Due date picker
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        selectedDate == null
+                            ? 'No due date selected'
+                            : 'Due: ${selectedDate!.month}/${selectedDate!.day}/${selectedDate!.year}',
+                      ),
+                    ),
+                    TextButton.icon(
+                      onPressed: () async {
+                        final DateTime? picked = await showDatePicker(
+                          context: context,
+                          initialDate: DateTime.now(),
+                          firstDate: DateTime.now(),
+                          lastDate: DateTime(2100),
+                        );
+                        if (picked != null) {
+                          setDialogState(() {
+                            selectedDate = picked;
+                          });
+                        }
+                      },
+                      icon: const Icon(Icons.calendar_today),
+                      label: const Text('Pick Date'),
+                    ),
+                  ],
                 ),
-              ],
+                const SizedBox(height: 16),
+
+                // 4. Task type dropdown
+                DropdownButtonFormField<String>(
+                  initialValue: selectedType,
+                  decoration: InputDecoration(
+                    labelText: 'Task Type',
+                  ),
+                  items: taskTypes.map((type) {
+                    return DropdownMenuItem(
+                      value: type,
+                      child: Text(type),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    setDialogState(() {
+                      selectedType = value!;
+                    });
+                  },
+                ),
+
+                // Page ranges - only shows for Reading
+                if (selectedType == 'Reading') ...[
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Text('Page Ranges', style: TextStyle(fontWeight: FontWeight.bold)),
+                      Spacer(),
+                      TextButton.icon(
+                        onPressed: () {
+                          setDialogState(() {
+                            pageRanges.add({
+                              'start': TextEditingController(),
+                              'end': TextEditingController(),
+                              'source': TextEditingController(),
+                            });
+                          });
+                        },
+                        icon: const Icon(Icons.add),
+                        label: Text('Add Range'),
+                      ),
+                    ],
+                  ),
+                  if (pageRangeError != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4.0),
+                    child: Text(
+                      pageRangeError!,
+                      style: TextStyle(color: Colors.red, fontSize: 12),
+                    ),
+                  ),
+                  ...pageRanges.asMap().entries.map((entry) {
+                    int index = entry.key;
+                    Map<String, TextEditingController> range = entry.value;
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 8.0),
+                      child: Column(
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: TextField(
+                                  controller: range['start'],
+                                  keyboardType: TextInputType.number,
+                                  decoration: InputDecoration(
+                                    labelText: 'From',
+                                    hintText: '1',
+                                  ),
+                                ),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                                child: Text('to'),
+                              ),
+                              Expanded(
+                                child: TextField(
+                                  controller: range['end'],
+                                  keyboardType: TextInputType.number,
+                                  decoration: InputDecoration(
+                                    labelText: 'To',
+                                    hintText: '10',
+                                  ),
+                                ),
+                              ),
+                              if (pageRanges.length > 1)
+                                IconButton(
+                                  icon: const Icon(Icons.remove_circle, color: Colors.red),
+                                  onPressed: () {
+                                    setDialogState(() {
+                                      pageRanges.removeAt(index);
+                                    });
+                                  },
+                                ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+                )
             ],
+                // Question count - only show for Problem Set
+                if (selectedType == 'Problem Set') ...[
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: questionCountController,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      labelText: 'Number of Questions',
+                      hintText: 'e.g. 20',
+                    ),
+                  ),
+                ],
+              ],
+            ),
           ),
           actions: [
             TextButton(
@@ -460,8 +471,31 @@ class _TaskPageState extends State<TaskPage> {
             TextButton(
               onPressed: () {
                 if (titleController.text.isNotEmpty) {
-                  // Convert page ranges to int maps
+                  // Validate page ranges first
+                  if (selectedType == 'Reading') {
+                    bool hasError = false;
+                    for (var r in pageRanges) {
+                      final start = int.tryParse(r['start']!.text);
+                      final end = int.tryParse(r['end']!.text);
+                      if (start == null || end == null) {
+                        hasError = true;
+                        break;
+                      }
+                      if (end <= start) {
+                        hasError = true;
+                        break;
+                      }
+                    }
+                    if (hasError) {
+                      setDialogState(() {
+                        pageRangeError = 'Each "To" page must be greater than "From" page';
+                      });
+                      return; // ← stops here, dialog stays open
+                    }
+                  }
+                  // Passed validation, build ranges
                   List<Map<String, int>>? ranges;
+                  // Convert page ranges to int maps
                   if (selectedType == 'Reading') {
                     ranges = pageRanges
                         .where((r) =>
@@ -481,7 +515,14 @@ class _TaskPageState extends State<TaskPage> {
                     questionCount = int.tryParse(questionCountController.text);
                   }
 
-                  _addTask(titleController.text, selectedDate, selectedType, ranges, questionCount, selectedDifficulty);
+                  _addTask(
+                    titleController.text,
+                    selectedDate,
+                    selectedType,
+                    ranges,
+                    questionCount,
+                    selectedDifficulty,
+                  );
                   Navigator.pop(context);
                 }
               },
