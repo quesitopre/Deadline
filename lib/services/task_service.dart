@@ -20,7 +20,7 @@ class TaskService {
   Future<void> initialize() async {
     if (_loaded) return;
     final prefs = await SharedPreferences.getInstance();
-    //await prefs.remove('tasks'); // Resets app to have no tasks, use if tasks corrupted
+    await prefs.remove('tasks'); // Resets app to have no tasks, use if tasks corrupted
     final String? data = prefs.getString('tasks');
     if (data != null) {
       final List decoded = jsonDecode(data);
@@ -36,8 +36,10 @@ class TaskService {
             ? List<Map<String, int>>.from(
                 (t['pageRanges'] as List).map((r) => Map<String, int>.from(r)))
             : null, 
-        questionCount: t['questionCount'],                   // ← new
+        questionCount: t['questionCount'],                 
         taskDifficulty: t['taskDifficulty'] ?? 'Easy',
+        questionsAnswered: t['questionsAnswered'],
+        currentPage: t['currentPage'],
       )));
     }
     _loaded = true;
@@ -51,11 +53,13 @@ class TaskService {
       'description': t.description,
       'isCompleted': t.isCompleted,
       'createdAt': t.createdAt.toString(),
-      'dueDate': t.dueDate?.toString(),     // ← new
+      'dueDate': t.dueDate?.toString(),     
       'taskType': t.taskType,
-      'pageRanges': t.pageRanges,   // ← new
-      'questionCount': t.questionCount,   // ← new
+      'pageRanges': t.pageRanges,   
+      'questionCount': t.questionCount,   
       'taskDifficulty': t.taskDifficulty,
+      'questionsAnswered': t.questionsAnswered,
+      'currentPage': t.currentPage,
     }).toList();
     await prefs.setString('tasks', jsonEncode(taskList));
   }
@@ -69,7 +73,7 @@ class TaskService {
       createdAt: DateTime.now(),
       dueDate: dueDate,
       taskType: taskType,
-      pageRanges: pageRanges,    // ← new
+      pageRanges: pageRanges,    
       questionCount: questionCount,
       taskDifficulty: taskDifficulty,
     ));
@@ -422,5 +426,32 @@ class TaskService {
     if (difficulty == 'Hard') return 0;
     if (difficulty == 'Medium') return 1;
     return 2;
+  }
+
+  Future<void> updateProgress(String id, {int? questionsAnswered, int? currentPage}) async {
+    final index = _tasks.indexWhere((t) => t.id == id);
+    if (index == -1) return;
+
+    if (questionsAnswered != null) {
+      _tasks[index].questionsAnswered = questionsAnswered;
+      // Auto complete if all questions answered
+      if (_tasks[index].questionCount != null &&
+          questionsAnswered >= _tasks[index].questionCount!) {
+        _tasks[index].isCompleted = true;
+      }
+    }
+
+    if (currentPage != null) {
+      _tasks[index].currentPage = currentPage;
+      // Auto complete if reached last page of last range
+      if (_tasks[index].pageRanges != null && _tasks[index].pageRanges!.isNotEmpty) {
+        final lastRange = _tasks[index].pageRanges!.last;
+        if (currentPage >= (lastRange['end'] as int)) {
+          _tasks[index].isCompleted = true;
+        }
+      }
+    }
+
+    await _save();
   }
 }

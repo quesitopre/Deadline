@@ -3,7 +3,7 @@ import '../../models/task.dart';
 import '../../models/task_schedule.dart';
 import '../../services/task_service.dart';
 
-class IndividualTaskPage extends StatelessWidget {
+class IndividualTaskPage extends StatefulWidget {
   final Task task;
   final TaskSchedule? schedule;
 
@@ -14,7 +14,19 @@ class IndividualTaskPage extends StatelessWidget {
   });
 
   @override
-  
+  State<IndividualTaskPage> createState() => _IndividualTaskPageState();
+}
+
+class _IndividualTaskPageState extends State<IndividualTaskPage> {
+  final TaskService _taskService = TaskService();
+  late Task _task;
+
+  @override
+  void initState() {
+    super.initState();
+    _task = widget.task; // ← use local copy so we can update it
+  }
+
   Widget build(BuildContext context) {
     /* For testing purposes
     print('Task type: ${task.taskType}');
@@ -25,7 +37,7 @@ class IndividualTaskPage extends StatelessWidget {
     */
     return Scaffold( //basic page structure
       appBar: AppBar( // the top bar with task title
-        title: Text(task.title),
+        title: Text(_task.title),
       ),
       body: SingleChildScrollView( // makes page scrollable
         padding: EdgeInsets.all(16), //adds spacing around content
@@ -38,7 +50,7 @@ class IndividualTaskPage extends StatelessWidget {
             const SizedBox(height: 16),
             _buildInfoCard(context), // card 1: task details
             const SizedBox(height: 16), // spacing between cards
-            if (schedule != null) _buildScheduleCard(schedule!),
+            if (widget.schedule != null) _buildScheduleCard(widget.schedule!),
           ],
         ),
       ),
@@ -46,9 +58,9 @@ class IndividualTaskPage extends StatelessWidget {
   }
 
   Widget _buildInfoCard(BuildContext context) {
-    final difficultyColor = task.taskDifficulty == 'Easy'
+    final difficultyColor = _task.taskDifficulty == 'Easy'
         ? Colors.green
-        : task.taskDifficulty == 'Medium'
+        : _task.taskDifficulty == 'Medium'
             ? Colors.orange
             : Colors.red;
 
@@ -60,7 +72,7 @@ class IndividualTaskPage extends StatelessWidget {
           children: [
             // Title
             Text(
-              task.title,
+              _task.title,
               style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
             ),
             Divider(),
@@ -69,14 +81,14 @@ class IndividualTaskPage extends StatelessWidget {
             Row(
               children: [
                 Icon(
-                  task.isCompleted ? Icons.check_circle : Icons.pending_actions,
-                  color: task.isCompleted ? Colors.green : Colors.orange,
+                  _task.isCompleted ? Icons.check_circle : Icons.pending_actions,
+                  color: _task.isCompleted ? Colors.green : Colors.orange,
                 ),
                 SizedBox(width: 8),
                 Text(
-                  task.isCompleted ? 'Completed' : 'Pending',
+                  _task.isCompleted ? 'Completed' : 'Pending',
                   style: TextStyle(
-                    color: task.isCompleted ? Colors.green : Colors.orange,
+                    color: _task.isCompleted ? Colors.green : Colors.orange,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -85,7 +97,7 @@ class IndividualTaskPage extends StatelessWidget {
             SizedBox(height: 12),
 
             // Task type
-            _buildInfoRow(Icons.category, 'Type', task.taskType),
+            _buildInfoRow(Icons.category, 'Type', _task.taskType),
             SizedBox(height: 8),
 
             // Difficulty
@@ -95,7 +107,7 @@ class IndividualTaskPage extends StatelessWidget {
                 SizedBox(width: 8),
                 Text('Difficulty: '),
                 Text(
-                  task.taskDifficulty,
+                  _task.taskDifficulty,
                   style: TextStyle(
                     color: difficultyColor,
                     fontWeight: FontWeight.bold,
@@ -106,27 +118,27 @@ class IndividualTaskPage extends StatelessWidget {
             SizedBox(height: 8),
 
             // Due date
-            if (task.dueDate != null) ...[
+            if (_task.dueDate != null) ...[
               _buildInfoRow(
                 Icons.calendar_today,
                 'Due Date',
-                '${task.dueDate!.month}/${task.dueDate!.day}/${task.dueDate!.year}',
+                '${_task.dueDate!.month}/${_task.dueDate!.day}/${_task.dueDate!.year}',
               ),
               SizedBox(height: 8),
             ],
 
             // Question count for Problem Set
-            if (task.questionCount != null) ...[
+            if (_task.questionCount != null) ...[
               _buildInfoRow(
                 Icons.quiz,
                 'Questions',
-                '${task.questionCount}',
+                '${_task.questionCount}',
               ),
               SizedBox(height: 8),
             ],
 
             // Page ranges for Reading
-            if (task.pageRanges != null && task.pageRanges!.isNotEmpty) ...[
+            if (_task.pageRanges != null && _task.pageRanges!.isNotEmpty) ...[
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -137,7 +149,7 @@ class IndividualTaskPage extends StatelessWidget {
                     children: [
                       Text('Page Ranges:',
                           style: TextStyle(fontWeight: FontWeight.bold)),
-                      ...task.pageRanges!.map((r) =>
+                      ..._task.pageRanges!.map((r) =>
                           Text('  pg. ${r['start']} - ${r['end']}')),
                     ],
                   ),
@@ -219,6 +231,9 @@ class IndividualTaskPage extends StatelessWidget {
   }
 
   Widget _buildProgressCircle(BuildContext context){
+    final percent = _task.progressPercent;
+    final percentText = '${(percent * 100).toStringAsFixed(0)}%';
+
     return Stack(
       alignment: Alignment.center,
       children: [
@@ -226,40 +241,228 @@ class IndividualTaskPage extends StatelessWidget {
           width: 220,
           height: 220,
           child: CircularProgressIndicator(
-            value: 0.7,
+            value: percent,
             strokeWidth: 10,
             backgroundColor: Colors.grey[200],
+            color: percent == 1.0 ? Colors.green : Colors.blue,
           ),
         ),
-        Text("70%", style: TextStyle(fontWeight: FontWeight.bold)),
+        Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              percentText,
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                color: percent == 1.0 ? Colors.green : Colors.black,
+              ),
+            ),
+            if (percent == 1.0)
+              Text(
+                'Complete!',
+                style: TextStyle(color: Colors.green, fontSize: 12),
+              ),
+          ],
+        ),
       ],
     );
   }
 
-  Widget _buildPopUp(BuildContext context){
+  Widget _buildPopUp(BuildContext context) {
+    // Only show for Problem Set and Reading
+    if (_task.taskType != 'Problem Set' && _task.taskType != 'Reading') {
+      return const SizedBox.shrink(); // ← invisible widget for other task types
+    }
+
     return ElevatedButton(
-      onPressed: () {
-        showDialog(
-          context: context,
-          builder: (BuildContext context) {
-            return AlertDialog(
-              title: Text("Update Progress"),
-              content: Text("This is a simple pop-up message."),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context), // Closes the dialog
-                  child: Text("Save"),
+      onPressed: () => _showProgressDialog(context),
+      child: Text('Update Progress'),
+    );
+  }
+
+  void _showProgressDialog(BuildContext context) {
+    if (_task.taskType == 'Problem Set') {
+      _showProblemSetDialog(context);
+    } else if (_task.taskType == 'Reading') {
+      _showReadingDialog(context);
+    }
+  }
+
+  void _showProblemSetDialog(BuildContext context) {
+    int currentCount = _task.questionsAnswered ?? 0;
+    final int maxCount = _task.questionCount ?? 0;
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: Text('Update Progress'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Questions answered out of $maxCount',
+                style: TextStyle(color: Colors.grey[600]),
+              ),
+              SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // Minus button
+                  IconButton(
+                    onPressed: currentCount > 0
+                        ? () => setDialogState(() => currentCount--)
+                        : null,
+                    icon: Icon(Icons.remove_circle, size: 36),
+                    color: Colors.red,
+                  ),
+                  SizedBox(width: 16),
+                  // Current count display
+                  Container(
+                    width: 60,
+                    alignment: Alignment.center,
+                    child: Text(
+                      '$currentCount',
+                      style: TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: 16),
+                  // Plus button
+                  IconButton(
+                    onPressed: currentCount < maxCount
+                        ? () => setDialogState(() => currentCount++)
+                        : null,
+                    icon: Icon(Icons.add_circle, size: 36),
+                    color: Colors.green,
+                  ),
+                ],
+              ),
+              // Progress preview
+              SizedBox(height: 8),
+              LinearProgressIndicator(
+                value: maxCount > 0 ? currentCount / maxCount : 0,
+                backgroundColor: Colors.grey[200],
+                color: currentCount == maxCount ? Colors.green : Colors.blue,
+              ),
+              SizedBox(height: 4),
+              Text(
+                maxCount > 0
+                    ? '${(currentCount / maxCount * 100).toStringAsFixed(0)}%'
+                    : '0%',
+                style: TextStyle(fontSize: 12, color: Colors.grey),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () async {
+                await _taskService.updateProgress(
+                  _task.id,
+                  questionsAnswered: currentCount,
+                );
+                // Refresh local task
+                setState(() {
+                  _task.questionsAnswered = currentCount;
+                  if (currentCount >= maxCount) {
+                    _task.isCompleted = true;
+                  }
+                });
+                Navigator.pop(context);
+              },
+              child: Text('Save'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showReadingDialog(BuildContext context) {
+    final TextEditingController pageController = TextEditingController(
+      text: _task.currentPage?.toString() ?? 
+            _task.pageRanges!.first['start'].toString(),
+    );
+    String? errorText;
+
+    // Get valid page range bounds
+    final int firstPage = _task.pageRanges!.first['start'] as int;
+    final int lastPage = _task.pageRanges!.last['end'] as int;
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: Text('Update Progress'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Enter the page you read up to',
+                style: TextStyle(color: Colors.grey[600]),
+              ),
+              SizedBox(height: 4),
+              Text(
+                'Valid range: pg. $firstPage - $lastPage',
+                style: TextStyle(color: Colors.grey[400], fontSize: 12),
+              ),
+              SizedBox(height: 16),
+              TextField(
+                controller: pageController,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  labelText: 'Current Page',
+                  hintText: 'e.g. $firstPage',
+                  errorText: errorText,
+                  border: OutlineInputBorder(),
                 ),
-                TextButton(
-                  onPressed: () => Navigator.pop(context), // Closes the dialog
-                  child: Text("Cancel"),
-                ),
-              ],
-            );
-          },
-        );
-      },
-      child: Text("Update Progress?"),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () async {
+                final int? page = int.tryParse(pageController.text);
+
+                // Validate
+                if (page == null) {
+                  setDialogState(() => errorText = 'Please enter a valid number');
+                  return;
+                }
+                if (page < firstPage || page > lastPage) {
+                  setDialogState(() => errorText = 'Page must be between $firstPage and $lastPage');
+                  return;
+                }
+
+                await _taskService.updateProgress(
+                  _task.id,
+                  currentPage: page,
+                );
+                // Refresh local task
+                setState(() {
+                  _task.currentPage = page;
+                  if (page >= lastPage) {
+                    _task.isCompleted = true;
+                  }
+                });
+                Navigator.pop(context);
+              },
+              child: Text('Save'),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
