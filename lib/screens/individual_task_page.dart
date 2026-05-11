@@ -3,6 +3,7 @@ import '../../models/task.dart';
 import '../../models/task_schedule.dart';
 import '../../services/task_service.dart';
 import '../../models/subtask.dart';
+import 'package:deadline_app/data/course_data.dart';
 
 class IndividualTaskPage extends StatefulWidget {
   final Task task;
@@ -123,6 +124,16 @@ class _IndividualTaskPageState extends State<IndividualTaskPage> {
               ],
             ),
             SizedBox(height: 8),
+
+            // Course
+            if (_task.courseCode != null) ...[
+              _buildInfoRow(
+                Icons.school,
+                'Course',
+                '${_task.courseCode} — ${CourseData.nameFromCode(_task.courseCode!)}',
+              ),
+              SizedBox(height: 8),
+            ],
 
             // Due date
             if (_task.dueDate != null) ...[

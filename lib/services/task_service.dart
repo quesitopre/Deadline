@@ -46,6 +46,7 @@ class TaskService {
                 .map((s) => Subtask.fromMap(Map<String, dynamic>.from(s)))
                 .toList()
             : null,
+        courseCode: t['courseCode'],
       )));
     }
     _loaded = true;
@@ -67,6 +68,7 @@ class TaskService {
       'questionsAnswered': t.questionsAnswered,
       'currentPage': t.currentPage,
       'subtasks': t.subtasks?.map((s) => s.toMap()).toList(),
+      'courseCode': t.courseCode,
     }).toList();
     await prefs.setString('tasks', jsonEncode(taskList));
   }
@@ -79,6 +81,7 @@ class TaskService {
     String taskDifficulty = 'Easy',
     int? questionsAnswered,
     int? currentPage,
+    String? courseCode, 
   }) async {
     // Auto-create subtasks for Essay
     List<Subtask>? subtasks;
@@ -98,6 +101,7 @@ class TaskService {
       questionCount: questionCount,
       taskDifficulty: taskDifficulty,
       subtasks: subtasks,
+      courseCode: courseCode,  
     ));
     await _save();
   }

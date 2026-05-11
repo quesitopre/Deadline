@@ -14,6 +14,7 @@ class Task {
   int? questionsAnswered;
   int? currentPage;
   List<Subtask>? subtasks;
+  String? courseCode;
   // A runtime-only field (not saved to storage)
   bool needsHardCap = false;
 
@@ -31,6 +32,7 @@ class Task {
     this.questionsAnswered,
     this.currentPage, 
     this.subtasks,
+    this.courseCode,
   });
 
   double get progressPercent {

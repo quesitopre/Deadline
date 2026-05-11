@@ -4,6 +4,7 @@ import 'models/task.dart';
 import 'package:deadline_app/models/task_schedule.dart';
 import 'package:deadline_app/screens/individual_task_page.dart';
 import 'package:deadline_app/models/task_schedule.dart';
+import 'package:deadline_app/data/course_data.dart';
 
 class TaskPage extends StatefulWidget {
   const TaskPage({super.key});
@@ -17,6 +18,7 @@ class _TaskPageState extends State<TaskPage> {
   List<Task> _tasks = [];
   String? _activeFilter; // null means show all tasks
   Map<String, TaskSchedule?> _schedules = {};
+  String? selectedCourseCode;  // null = Other
 
   @override
   void initState() {
@@ -29,8 +31,24 @@ class _TaskPageState extends State<TaskPage> {
     setState(() => _refreshTasks());
   }
 
-  void _addTask(String title, DateTime? dueDate, String taskType, List<Map<String, int>>? pageRanges, int? questionCount, String taskDifficulty) async {
-    await _taskService.addTask(title, '', dueDate: dueDate, taskType: taskType, pageRanges: pageRanges, questionCount: questionCount, taskDifficulty: taskDifficulty,);
+  void _addTask(
+    String title,
+    DateTime? dueDate,
+    String taskType,
+    List<Map<String, int>>? pageRanges,
+    int? questionCount,
+    String taskDifficulty,
+    String? courseCode,             // ← new
+  ) async {
+    await _taskService.addTask(
+      title, '',
+      dueDate: dueDate,
+      taskType: taskType,
+      pageRanges: pageRanges,
+      questionCount: questionCount,
+      taskDifficulty: taskDifficulty,
+      courseCode: courseCode,       // ← new
+    );
     setState(() => _refreshTasks());
   }
 
@@ -221,6 +239,8 @@ class _TaskPageState extends State<TaskPage> {
             ),
           ],
         ),
+        if (task.courseCode != null)
+          Text('Course: ${task.courseCode}'),
         if (task.dueDate != null)
           Text('Due: ${task.dueDate!.month}/${task.dueDate!.day}/${task.dueDate!.year}'),
         if (task.pageRanges != null && task.pageRanges!.isNotEmpty)
@@ -320,7 +340,34 @@ class _TaskPageState extends State<TaskPage> {
                   ],
                 ),
                 const SizedBox(height: 16),
-                // 3. Due date picker
+                // 3. Course Picker
+                DropdownButtonFormField<String>(
+                  value: selectedCourseCode,
+                  decoration: InputDecoration(
+                    labelText: 'Course',
+                  ),
+                  items: [
+                    // Other option first
+                    DropdownMenuItem<String>(
+                      value: null,
+                      child: Text('Other'),
+                    ),
+                    // Course options from CourseData
+                    ...CourseData.courses.map((course) {
+                      return DropdownMenuItem<String>(
+                        value: course['code'],
+                        child: Text('${course['code']} — ${course['name']}'),
+                      );
+                    }).toList(),
+                  ],
+                  onChanged: (value) {
+                    setDialogState(() {
+                      selectedCourseCode = value;
+                    });
+                  },
+                ),
+                const SizedBox(height: 16),
+                // 4. Due date picker
                 Row(
                   children: [
                     Expanded(
@@ -351,7 +398,7 @@ class _TaskPageState extends State<TaskPage> {
                 ),
                 const SizedBox(height: 16),
 
-                // 4. Task type dropdown
+                // 5. Task type dropdown
                 DropdownButtonFormField<String>(
                   initialValue: selectedType,
                   decoration: InputDecoration(
@@ -517,6 +564,7 @@ class _TaskPageState extends State<TaskPage> {
                     questionCount = int.tryParse(questionCountController.text);
                   }
 
+                  // Add button save system
                   _addTask(
                     titleController.text,
                     selectedDate,
@@ -524,6 +572,7 @@ class _TaskPageState extends State<TaskPage> {
                     ranges,
                     questionCount,
                     selectedDifficulty,
+                    selectedCourseCode, 
                   );
                   Navigator.pop(context);
                 }
