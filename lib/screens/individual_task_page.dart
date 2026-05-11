@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../models/task.dart';
 import '../../models/task_schedule.dart';
 import '../../services/task_service.dart';
+import '../../models/subtask.dart';
 
 class IndividualTaskPage extends StatefulWidget {
   final Task task;
@@ -46,10 +47,16 @@ class _IndividualTaskPageState extends State<IndividualTaskPage> {
           children: [ // calls each build method to get widgets and stacks them vertically in order
             _buildProgressCircle(context),         
             const SizedBox(height: 16),
+            // Congrats banner
+            if (_task.allSubtasksCompleted) _buildCongratsBanner(),
+            if (_task.allSubtasksCompleted) const SizedBox(height: 16),
             _buildPopUp(context),
             const SizedBox(height: 16),
             _buildInfoCard(context), // card 1: task details
             const SizedBox(height: 16), // spacing between cards
+            if (_task.taskType == 'Essay' &&
+                _task.subtasks != null)
+              _buildSubtaskChecklist(),
             if (widget.schedule != null) _buildScheduleCard(widget.schedule!),
           ],
         ),
@@ -460,6 +467,145 @@ class _IndividualTaskPageState extends State<IndividualTaskPage> {
               },
               child: Text('Save'),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+
+    Widget _buildCongratsBanner() {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.green[50],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.green),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.celebration, color: Colors.green),
+          SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Congratulations! 🎉',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.green,
+                    fontSize: 16,
+                  ),
+                ),
+                Text(
+                  'All subtasks complete! You may now mark this task as complete.',
+                  style: TextStyle(color: Colors.green[700], fontSize: 13),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSubtaskChecklist() {
+    // Find the first incomplete subtask index for locking
+    final firstIncompleteIndex = _task.subtasks!
+        .indexWhere((s) => !s.isCompleted);
+
+    return Card(
+      child: Padding(
+        padding: EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '📝 Essay Subtasks',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            Divider(),
+            ..._task.subtasks!.asMap().entries.map((entry) {
+              final index = entry.key;
+              final subtask = entry.value;
+
+              // Locked if a previous subtask is not complete
+              final bool isLocked = index > 0 &&
+                  !_task.subtasks![index - 1].isCompleted;
+
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Row(
+                  children: [
+                    // Checkbox
+                    Checkbox(
+                      value: subtask.isCompleted,
+                      onChanged: isLocked
+                          ? null  // ← disabled if locked
+                          : (value) async {
+                              await _taskService.toggleSubtask(
+                                _task.id,
+                                subtask.id,
+                                value ?? false,
+                              );
+                              // Reload task to reflect changes
+                              final updatedTasks = _taskService.getTasks();
+                              final updatedTask = updatedTasks
+                                  .firstWhere((t) => t.id == _task.id);
+                              setState(() => _task = updatedTask);
+                            },
+                    ),
+                    // Lock icon if locked
+                    if (isLocked)
+                      Icon(Icons.lock, size: 16, color: Colors.grey),
+                    SizedBox(width: 4),
+                    // Subtask info
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            subtask.title,
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              decoration: subtask.isCompleted
+                                  ? TextDecoration.lineThrough
+                                  : TextDecoration.none,
+                              color: isLocked
+                                  ? Colors.grey
+                                  : subtask.isCompleted
+                                      ? Colors.green
+                                      : Colors.black,
+                            ),
+                          ),
+                          Text(
+                            '${subtask.totalMinutes} min',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                          if (subtask.completedAt != null)
+                            Text(
+                              'Completed: ${subtask.completedAt!.month}/${subtask.completedAt!.day}/${subtask.completedAt!.year}',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Colors.green[400],
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                    // Completion icon
+                    if (subtask.isCompleted)
+                      Icon(Icons.check_circle, color: Colors.green),
+                    if (isLocked)
+                      Icon(Icons.lock_outline, color: Colors.grey[400]),
+                  ],
+                ),
+              );
+            }).toList(),
           ],
         ),
       ),

@@ -1,3 +1,5 @@
+import '../models/subtask.dart';
+
 class Task {
   String id;
   String title;
@@ -11,7 +13,8 @@ class Task {
   String taskDifficulty; 
   int? questionsAnswered;
   int? currentPage;
-  // Add this as a runtime-only field (not saved to storage)
+  List<Subtask>? subtasks;
+  // A runtime-only field (not saved to storage)
   bool needsHardCap = false;
 
   Task({
@@ -27,6 +30,7 @@ class Task {
     this.taskDifficulty = 'Easy',         
     this.questionsAnswered,
     this.currentPage, 
+    this.subtasks,
   });
 
   double get progressPercent {
@@ -42,9 +46,22 @@ class Task {
       if (totalPages == 0) return 0;
       // Calculate pages read from first page of first range
       final firstPage = pageRanges!.first['start'] as int;
-      final pagesRead = ((currentPage ?? firstPage) - firstPage).clamp(0, totalPages);
+      final pagesRead = ((currentPage ?? firstPage) - firstPage)
+          .clamp(0, totalPages);
       return (pagesRead / totalPages).clamp(0.0, 1.0);
+    } else if (taskType == 'Essay') {
+      if (subtasks == null || subtasks!.isEmpty) return 0;
+      final totalMinutes = subtasks!.fold(0, (sum, s) => sum + s.totalMinutes);
+      if (totalMinutes == 0) return 0;
+      final completedMinutes = subtasks!
+          .where((s) => s.isCompleted)
+          .fold(0, (sum, s) => sum + s.totalMinutes);
+      return (completedMinutes / totalMinutes).clamp(0.0, 1.0);
     }
     return 0;
   }
+
+  bool get allSubtasksCompleted =>
+      subtasks != null && subtasks!.isNotEmpty &&
+      subtasks!.every((s) => s.isCompleted);
 }

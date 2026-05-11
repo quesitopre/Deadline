@@ -48,8 +48,10 @@ class _TaskPageState extends State<TaskPage> {
     _tasks = _taskService.getTasksSortedByDueDate();
     _schedules = {
       for (var task in _tasks)
-        task.id: (task.taskType == 'Problem Set' || task.taskType == 'Reading')
-            ? _taskService.calculateTaskSchedule(task)  // ← renamed
+        task.id: (task.taskType == 'Problem Set' ||
+                task.taskType == 'Reading' ||
+                task.taskType == 'Essay')
+            ? _taskService.calculateTaskSchedule(task)
             : null
     };
     //print('Schedules: $_schedules'); for debugging

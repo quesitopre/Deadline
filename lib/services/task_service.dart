@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../models/subtask.dart';
 import '../models/task.dart';
 import '../models/task_schedule.dart';
 import '../models/day_schedule.dart';
@@ -40,6 +41,11 @@ class TaskService {
         taskDifficulty: t['taskDifficulty'] ?? 'Easy',
         questionsAnswered: t['questionsAnswered'],
         currentPage: t['currentPage'],
+        subtasks: t['subtasks'] != null
+            ? (t['subtasks'] as List)
+                .map((s) => Subtask.fromMap(Map<String, dynamic>.from(s)))
+                .toList()
+            : null,
       )));
     }
     _loaded = true;
@@ -60,11 +66,26 @@ class TaskService {
       'taskDifficulty': t.taskDifficulty,
       'questionsAnswered': t.questionsAnswered,
       'currentPage': t.currentPage,
+      'subtasks': t.subtasks?.map((s) => s.toMap()).toList(),
     }).toList();
     await prefs.setString('tasks', jsonEncode(taskList));
   }
 
-  Future<void> addTask(String title, String description, {DateTime? dueDate, String taskType = 'Other', List<Map<String, int>>? pageRanges, int? questionCount, String taskDifficulty = 'Unknown'}) async {
+  Future<void> addTask(String title, String description, {
+    DateTime? dueDate,
+    String taskType = 'Other',
+    List<Map<String, int>>? pageRanges,
+    int? questionCount,
+    String taskDifficulty = 'Easy',
+    int? questionsAnswered,
+    int? currentPage,
+  }) async {
+    // Auto-create subtasks for Essay
+    List<Subtask>? subtasks;
+    if (taskType == 'Essay') {
+      subtasks = Subtask.essayDefaults();
+    }
+
     _tasks.add(Task(
       id: DateTime.now().toString(),
       title: title,
@@ -73,9 +94,10 @@ class TaskService {
       createdAt: DateTime.now(),
       dueDate: dueDate,
       taskType: taskType,
-      pageRanges: pageRanges,    
+      pageRanges: pageRanges,
       questionCount: questionCount,
       taskDifficulty: taskDifficulty,
+      subtasks: subtasks,
     ));
     await _save();
   }
@@ -86,6 +108,30 @@ class TaskService {
       _tasks[index].isCompleted = !_tasks[index].isCompleted;
       await _save();
     }
+  }
+
+  Future<void> toggleSubtask(String taskId, String subtaskId, bool isCompleted) async {
+    final taskIndex = _tasks.indexWhere((t) => t.id == taskId);
+    if (taskIndex == -1) return;
+
+    final task = _tasks[taskIndex];
+    if (task.subtasks == null) return;
+
+    final subtaskIndex = task.subtasks!.indexWhere((s) => s.id == subtaskId);
+    if (subtaskIndex == -1) return;
+
+    // Toggle the subtask
+    task.subtasks![subtaskIndex].isCompleted = isCompleted;
+    task.subtasks![subtaskIndex].completedAt = isCompleted ? DateTime.now() : null;
+
+    // If unchecking, lock all subsequent subtasks
+    if (!isCompleted) {
+      for (int i = subtaskIndex + 1; i < task.subtasks!.length; i++) {
+        task.subtasks![i].isCompleted = false;
+        task.subtasks![i].completedAt = null;
+      }
+    }
+    await _save();
   }
 
   Future<void> deleteTask(String id) async {
@@ -183,21 +229,17 @@ class TaskService {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final due = DateTime(task.dueDate!.year, task.dueDate!.month, task.dueDate!.day);
-
     final daysUntilDue = due.difference(today).inDays;
     if (daysUntilDue <= 0) return null;
 
     // How many days based on difficulty
-    final int daysToComplete;
-    if (task.taskDifficulty == 'Easy') {
-      daysToComplete = 7;
-    } else if (task.taskDifficulty == 'Medium') {
-      daysToComplete = 14;
-    } else {
-      daysToComplete = 21;
-    }
+    final int daysToComplete = task.taskType == 'Essay' ? 7 : // Essay uses fixed 7 day window
+      task.taskDifficulty == 'Easy' ? 7 :
+      task.taskDifficulty == 'Medium' ? 14 : 21;
 
-    final int workDays = daysToComplete < daysUntilDue ? daysToComplete : daysUntilDue;
+    final int workDays = daysToComplete < daysUntilDue
+      ? daysToComplete
+      : daysUntilDue;
 
     // Get the total count based on task type
     final int? total;
@@ -208,6 +250,12 @@ class TaskService {
               task.pageRanges!.isNotEmpty) {
       // Add up all pages across all ranges
       total = task.pageRanges!.fold(0, (sum, r) => sum! + ((r['end'] as int) - (r['start'] as int) + 1));
+    } else if (task.taskType == 'Essay' &&
+        task.subtasks != null && task.subtasks!.isNotEmpty) {
+      // Total minutes for remaining subtasks
+      total = task.subtasks!
+          .where((s) => !s.isCompleted)
+          .fold(0, (sum, s) => sum! + s.totalMinutes);
     } else {
       return null; // unsupported task type
     }
@@ -224,9 +272,10 @@ class TaskService {
       firstDayCount: firstDay,
       remainingDaysCount: perDayFloor,
       remainingDays: daysUntilDue,
-      unit: task.taskType == 'Problem Set' ? 'problems' : 'pages',
-      taskTitle: task.title,       // ← new
-      difficulty: task.taskDifficulty, // ← new
+      unit: task.taskType == 'Problem Set' ? 'problems' :
+            task.taskType == 'Reading' ? 'pages' : 'minutes',
+      taskTitle: task.title,       
+      difficulty: task.taskDifficulty, 
     );
   }
 
@@ -247,13 +296,30 @@ class TaskService {
     // Get valid tasks - no completed, no overdue, only Problem Set and Reading
     final validTasks = _tasks.where((t) {
       if (t.isCompleted) return false;
-      if (t.taskType != 'Problem Set' && t.taskType != 'Reading') return false;
+      if (t.taskType != 'Problem Set' &&
+          t.taskType != 'Reading' &&
+          t.taskType != 'Essay') 
+      {
+        return false;
+      }
+
       if (t.dueDate == null) return false;
       final due = DateTime(t.dueDate!.year, t.dueDate!.month, t.dueDate!.day);
       if (due.isBefore(today)) return false;
       if (t.taskType == 'Problem Set' && t.questionCount == null) return false;
+    
       if (t.taskType == 'Reading' &&
-          (t.pageRanges == null || t.pageRanges!.isEmpty)) return false;
+          (t.pageRanges == null || t.pageRanges!.isEmpty)) 
+      {
+        return false;
+      }
+
+      if (t.taskType == 'Essay' &&
+      (t.subtasks == null || t.subtasks!.isEmpty))
+      {
+        return false;
+      }
+
       return true;
     }).toList();
 
@@ -267,6 +333,10 @@ class TaskService {
 
     // First pass: schedule within soft cap (150 min)
     for (final task in validTasks) {
+      if (task.taskType == 'Essay') {
+        _scheduleEssaySubtasks(task, schedule, softCapMinutes, hardCapMinutes, totalDays);
+        continue;  // ← skip normal scheduling for essays
+      }
       final taskSchedule = calculateTaskSchedule(task);
       if (taskSchedule == null) continue;
 
@@ -453,5 +523,65 @@ class TaskService {
     }
 
     await _save();
+  }
+
+  void _scheduleEssaySubtasks(
+    Task task,
+    List<DayWorkload> schedule,
+    int softCap,
+    int hardCap,
+    int totalDays,
+  ) {
+    const int minMinutesPerDay = 20;
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final due = DateTime(task.dueDate!.year, task.dueDate!.month, task.dueDate!.day);
+    final daysUntilDue = due.difference(today).inDays.clamp(0, totalDays);
+
+    // Only schedule incomplete subtasks in order
+    final pendingSubtasks = task.subtasks!.where((s) => !s.isCompleted).toList();
+
+    int currentDay = 0;
+
+    for (final subtask in pendingSubtasks) {
+      // Find first available day with space within soft cap
+      while (currentDay < daysUntilDue &&
+          schedule[currentDay].totalMinutes >= softCap) {
+        currentDay++;
+      }
+
+      if (currentDay >= totalDays) break;
+
+      int remainingMinutes = subtask.totalMinutes;
+
+      // Place subtask with minimum 20 min per day
+      while (remainingMinutes > 0 && currentDay < totalDays) {
+        final available = softCap - schedule[currentDay].totalMinutes;
+
+        if (available < minMinutesPerDay) {
+          currentDay++;
+          continue;
+        }
+
+        final toPlace = remainingMinutes <= available
+            ? remainingMinutes
+            : available;
+
+        if (toPlace < minMinutesPerDay && remainingMinutes > minMinutesPerDay) {
+          currentDay++;
+          continue;
+        }
+
+        schedule[currentDay].totalMinutes += toPlace;
+        schedule[currentDay].tasks.add(TaskMinutes(
+          taskTitle: '${task.title}: ${subtask.title}',
+          minutes: toPlace,
+          difficulty: task.taskDifficulty,
+        ));
+
+        remainingMinutes -= toPlace;
+        if (remainingMinutes > 0) currentDay++;
+      }
+    }
   }
 }
