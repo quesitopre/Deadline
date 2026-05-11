@@ -150,6 +150,47 @@ class _DashboardPageState extends State<Dashboard> {
   }
 
   Widget _buildNextDueCard(int hoursUntilDue, int hoursPastDue) {
+    // ← handle no tasks case
+    if (hoursUntilDue == -1) {
+      return Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.2),
+              blurRadius: 6,
+              offset: Offset(0, 3),
+            ),
+          ],
+          border: Border.all(color: Colors.grey.withOpacity(0.4)),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.task_alt, color: Colors.grey, size: 36),
+              SizedBox(height: 12),
+              Text(
+                '0d',
+                style: TextStyle(
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey,
+                ),
+              ),
+              SizedBox(height: 4),
+              Text(
+                'No Tasks Due',
+                style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+    
     final color = hoursUntilDue == 0 ? Colors.red : Colors.blue;
     final icon = hoursUntilDue == 0 ? Icons.warning_amber : Icons.timer;
 

@@ -167,7 +167,7 @@ class TaskService {
         .where((t) => t.dueDate != null)
         .toList();
 
-    if (pending.isEmpty) return 0;
+    if (pending.isEmpty) return -1;  // ← changed from 0 to -1 as a "no tasks" signal
 
     // Sort by due date to find the nearest task
     pending.sort((a, b) => a.dueDate!.compareTo(b.dueDate!));
