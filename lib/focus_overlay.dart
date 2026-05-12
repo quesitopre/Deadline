@@ -68,7 +68,7 @@ class _FocusOverlayState extends State<FocusOverlay> {
                 ? '$_blockedAppName is Blocked'
                 : 'App blocked',
               style: const TextStyle(  
-                color: Colors.white,
+                color: Colors.black,
                 fontSize:26,
                 fontWeight:FontWeight.bold,
               ),
@@ -80,13 +80,13 @@ class _FocusOverlayState extends State<FocusOverlay> {
             if(_remainingSeconds >0)...[
               const Text( 
                 'Focus time remaining',
-                style: TextStyle(color: Colors.white54, fontSize: 13),
+                style: TextStyle(color: Colors.black, fontSize: 13),
               ),
               const SizedBox(height: 8),
               Text( 
                 _formatTime(_remainingSeconds),
                 style: const TextStyle( 
-                  color: Colors.white,
+                  color: Colors. black,
                   fontSize:56,
                   fontWeight: FontWeight.bold,
                   letterSpacing: 4,
