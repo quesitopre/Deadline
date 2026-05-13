@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'services/task_service.dart';
-//import 'models/task.dart';
+import 'models/task.dart';
+import 'package:deadline_app/widgets/workload_graph.dart';
 
 class Dashboard extends StatefulWidget {
   const Dashboard({super.key});
@@ -37,7 +38,8 @@ class _DashboardPageState extends State<Dashboard> {
       || (t.taskDifficulty == "Hard" && t.dueDate!.isBefore(DateTime.now().add(const Duration(days: 7))))
       )).toList();
     final pendingTasks = _taskService.getPendingTasks();
-    final timeBeforeNearestTaskisDue = DateTime.now().subtract(const Duration(days: 2));
+    final hoursUntilDue = _taskService.hoursUntilNearestTask();
+    final hoursPastDue = _taskService.hoursSinceNearestTaskOverdue();
     final completedTasks = _taskService.getCompletedTasks();
     final atRiskTasks = allTasks.where((t) =>
       t.dueDate != null &&
@@ -46,8 +48,9 @@ class _DashboardPageState extends State<Dashboard> {
       (t.dueDate!.year == DateTime.now().year &&
       t.dueDate!.month == DateTime.now().month &&
       t.dueDate!.day == DateTime.now().day))).toList();
+    final schedule = _taskService.calculateThreeWeekSchedule();
 
-    return Padding(
+    return SingleChildScrollView(
       padding: const EdgeInsets.all(16.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -60,6 +63,7 @@ class _DashboardPageState extends State<Dashboard> {
           GridView.count(
             crossAxisCount: 2,
             shrinkWrap: true,
+            physics: NeverScrollableScrollPhysics(),
             crossAxisSpacing: 16,
             mainAxisSpacing: 16,
             children: [
@@ -75,12 +79,7 @@ class _DashboardPageState extends State<Dashboard> {
                 color: Colors.orange,
                 icon: Icons.pending_actions,
               ),
-              _buildStatCard(
-                label: 'Hours Left',
-                count: completedTasks.length,
-                color: Colors.green,
-                icon: Icons.timelapse,
-              ),
+              _buildNextDueCard(hoursUntilDue,hoursPastDue),
               _buildStatCard(
                 label: 'At Risk',
                 count: atRiskTasks.length,
@@ -88,6 +87,14 @@ class _DashboardPageState extends State<Dashboard> {
                 icon: Icons.warning_amber,
               ),
             ],
+          ),
+          SizedBox(height: 24),
+          // Workload graph
+          Card(
+            child: Padding(
+              padding: EdgeInsets.all(16),
+              child: WorkloadGraph(schedule: schedule), // ← new
+            ),
           ),
         ],
       ),
@@ -135,6 +142,115 @@ class _DashboardPageState extends State<Dashboard> {
                 fontSize: 14,
                 color: Colors.grey[600],
               ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNextDueCard(int hoursUntilDue, int hoursPastDue) {
+    // ← handle no tasks case
+    if (hoursUntilDue == -1) {
+      return Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.2),
+              blurRadius: 6,
+              offset: Offset(0, 3),
+            ),
+          ],
+          border: Border.all(color: Colors.grey.withOpacity(0.4)),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.task_alt, color: Colors.grey, size: 36),
+              SizedBox(height: 12),
+              Text(
+                '0d',
+                style: TextStyle(
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey,
+                ),
+              ),
+              SizedBox(height: 4),
+              Text(
+                'No Tasks Due',
+                style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+    
+    final color = hoursUntilDue == 0 ? Colors.red : Colors.blue;
+    final icon = hoursUntilDue == 0 ? Icons.warning_amber : Icons.timer;
+
+    // Smart display - show days if over 48 hours
+    final String countText;
+    final String labelText;
+
+    if (hoursUntilDue == 0 && hoursPastDue >= 48) {
+      countText = '${(hoursPastDue / 24).floor()}d';
+      labelText = 'Days Since Overdue';
+    }else if(hoursPastDue == 999){
+      countText = 'Over a Month';
+      labelText = 'Time Since Overdue';
+    }else if(hoursUntilDue == 0){
+      countText = '${hoursPastDue}h';
+      labelText = 'Hours Since Overdue';
+    }else if(hoursUntilDue == 999){
+      countText = 'Over a Month';
+      labelText = 'Time Until Due';
+    } else if (hoursUntilDue >= 48) {
+      countText = '${(hoursUntilDue / 24).floor()}d';
+      labelText = 'Days Until Due';
+    } else {
+      countText = '${hoursUntilDue}h';
+      labelText = 'Hours Until Due';
+    }
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.2),
+            blurRadius: 6,
+            offset: Offset(0, 3),
+          ),
+        ],
+        border: Border.all(color: color.withOpacity(0.4)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: color, size: 36),
+            SizedBox(height: 12),
+            Text(
+              countText,
+              style: TextStyle(
+                fontSize: 32,          // ← slightly smaller than before
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
+            ),
+            SizedBox(height: 4),
+            Text(
+              labelText,
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 13, color: Colors.grey[600]),
             ),
           ],
         ),
