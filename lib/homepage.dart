@@ -19,7 +19,7 @@ class _HomepageState extends State<Homepage> {
 
   //List of page titles
   final List<String> _pageTitles = [
-    'Dashboard', 'Task', 'Timer', 'Blocker', 'Profile'
+    'Dashboard', 'Task', 'Timer', 'Block List', 'Profile'
   ];
 
   late final List<Widget> _pages;
