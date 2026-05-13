@@ -46,6 +46,7 @@ class WorkloadGraph extends StatelessWidget {
         ),
         SizedBox(height: 4),
         // Week labels
+        /*
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
@@ -54,6 +55,7 @@ class WorkloadGraph extends StatelessWidget {
             Text('Week 3', style: TextStyle(fontSize: 11, color: Colors.grey)),
           ],
         ),
+        */
       ],
     );
   }
