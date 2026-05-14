@@ -269,6 +269,8 @@ class _TaskPageState extends State<TaskPage> {
       'Problem Set',
       'Reading',
       'Essay',
+      'Physics',
+      'Labwork',
       'Other'
     ];
 
