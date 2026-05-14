@@ -34,8 +34,8 @@ class _HomepageState extends State<Homepage> {
     const AppBlocker(),    // Blocker ✅
     Profile(studentName: 'studentName', studentID: 'studentID', email: 'email', courses: const [
     Course(
-      name: 'Computer Science 101',
-      code: 'CS101',
+      name: 'Software Engineering Management',
+      code: 'CS583',
       subject:'Computer Science',
       grade: 91.5,
       creditHours: 3,
@@ -46,6 +46,13 @@ class _HomepageState extends State<Homepage> {
       subject:'Mathematics',
       grade: 78.0,
       creditHours: 4,
+    ),
+    Course(
+      name: 'Intro to Physics',
+      code: 'PHYS101',
+      subject:'Physics',
+      grade: 81.0,
+      creditHours: 3,
     ),
    ],
   ),
