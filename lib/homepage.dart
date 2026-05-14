@@ -41,6 +41,13 @@ class _HomepageState extends State<Homepage> {
       creditHours: 3,
     ),
     Course(
+      name: 'Calculus II',
+      code: 'MATH202',
+      subject:'Mathematics',
+      grade: 78.0,
+      creditHours: 4,
+    ),
+    Course(
       name: 'Intro to Physics',
       code: 'PHYS101A',
       subject:'Physics',
