@@ -1,7 +1,7 @@
 class CourseData {
   // Single source of truth for courses
   static const List<Map<String, String>> courses = [
-    {'name': 'Software Engineering Management', 'code': 'CS583'},
+    {'name': 'Software Engineering MNGMT', 'code': 'CS583'},
     {'name': 'Calculus II',          'code': 'MATH202'},
     {'name': 'Intro to Physics',     'code': 'PHYS101A'},
     {'name': 'Intro to Physics LAB', 'code': 'PHYS101B'},
